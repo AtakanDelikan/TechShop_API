@@ -111,7 +111,7 @@ namespace TechShop_API.Controllers
                 {
                     // item already exists in the cart, so update quantity
                     int newQuantity = cartItemInCart.Quantity + updateQuantityBy;
-                    if (newQuantity == 0 || newQuantity <= 0)
+                    if (updateQuantityBy == 0 || newQuantity <= 0)
                     {
                         // remove cart item from cart & if it was the only item, remove cart also
                         _db.CartItems.Remove(cartItemInCart);
