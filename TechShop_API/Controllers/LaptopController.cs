@@ -34,14 +34,14 @@ namespace TechShop_API.Controllers
             if (id == 0)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 return BadRequest(_response);
             }
             Laptop laptop = _db.Laptops.FirstOrDefault(u=>u.Id == id);
             if (laptop == null)
             {
                 _response.StatusCode=HttpStatusCode.NotFound;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 return NotFound(_response);
             }
             _response.Result = laptop;
@@ -78,12 +78,12 @@ namespace TechShop_API.Controllers
                 }
                 else
                 {
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }
@@ -101,7 +101,7 @@ namespace TechShop_API.Controllers
                     if (laptopUpdateDTO == null || id != laptopUpdateDTO.Id)
                     {
                         _response.StatusCode = HttpStatusCode.BadRequest;
-                        _response.IsSuccsess = false;
+                        _response.IsSuccess = false;
                         return BadRequest();
                     }
 
@@ -109,7 +109,7 @@ namespace TechShop_API.Controllers
                     if (laptopFromDb == null)
                     {
                         _response.StatusCode = HttpStatusCode.BadRequest;
-                        _response.IsSuccsess = false;
+                        _response.IsSuccess = false;
                         return BadRequest();
                     }
 
@@ -132,12 +132,12 @@ namespace TechShop_API.Controllers
                 }
                 else
                 {
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                 }
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }
@@ -153,7 +153,7 @@ namespace TechShop_API.Controllers
                 if (id == 0)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                     return BadRequest();
                 }
 
@@ -161,7 +161,7 @@ namespace TechShop_API.Controllers
                 if (laptopFromDb == null)
                 {
                     _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                     return BadRequest();
                 }
 
@@ -175,7 +175,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }

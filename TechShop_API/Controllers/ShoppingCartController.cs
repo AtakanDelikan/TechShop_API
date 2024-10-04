@@ -46,7 +46,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
                 _response.StatusCode = HttpStatusCode.BadRequest;
@@ -70,7 +70,7 @@ namespace TechShop_API.Controllers
             if (laptop == null)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 return BadRequest();
             }
             if (shoppingCart == null && updateQuantityBy > 0)

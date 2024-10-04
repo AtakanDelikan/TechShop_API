@@ -33,7 +33,7 @@ namespace TechShop_API.Controllers
             if (shoppingCart == null || shoppingCart.CartItems == null || shoppingCart.CartItems.Count == 0)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 return BadRequest(_response);
             }
 

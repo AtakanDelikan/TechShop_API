@@ -42,7 +42,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }
@@ -75,7 +75,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }
@@ -125,7 +125,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string> { ex.ToString() };
             }
@@ -139,7 +139,7 @@ namespace TechShop_API.Controllers
             {
                 if (orderHeaderUpdateDTO == null || id != orderHeaderUpdateDTO.OrderHeaderId)
                 {
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest();
                 }
@@ -147,7 +147,7 @@ namespace TechShop_API.Controllers
 
                 if (orderFromDb == null)
                 {
-                    _response.IsSuccsess = false;
+                    _response.IsSuccess = false;
                     _response.StatusCode = HttpStatusCode.BadRequest;
                     return BadRequest();
                 }
@@ -172,7 +172,7 @@ namespace TechShop_API.Controllers
                     orderFromDb.StripePaymentIntentID = orderHeaderUpdateDTO.StripePaymentIntentID;
                 }
                 _db.SaveChanges();
-                _response.IsSuccsess = true;
+                _response.IsSuccess = true;
                 _response.StatusCode = HttpStatusCode.NoContent;
                 return Ok(_response);
 
@@ -180,7 +180,7 @@ namespace TechShop_API.Controllers
             }
             catch (Exception ex)
             {
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
             }

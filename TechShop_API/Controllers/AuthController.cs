@@ -44,7 +44,7 @@ namespace TechShop_API.Controllers
             {
                 _response.Result = new LoginResponseDTO();
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages.Add("Username or password is incorrect");
                 return BadRequest(_response);
             }
@@ -77,13 +77,13 @@ namespace TechShop_API.Controllers
             if (loginResponse.Email == null || string.IsNullOrEmpty(loginResponse.Token))
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages.Add("Username or password is incorrect");
                 return BadRequest(_response);
             }
 
             _response.StatusCode = HttpStatusCode.OK;
-            _response.IsSuccsess = true;
+            _response.IsSuccess = true;
             _response.Result = loginResponse;
             return Ok(_response);
         }
@@ -96,7 +96,7 @@ namespace TechShop_API.Controllers
             if (userFromDb != null)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccsess = false;
+                _response.IsSuccess = false;
                 _response.ErrorMessages.Add("Username already exists");
                 return BadRequest(_response);
             }
@@ -129,7 +129,7 @@ namespace TechShop_API.Controllers
                     }
 
                     _response.StatusCode = HttpStatusCode.OK;
-                    _response.IsSuccsess = true;
+                    _response.IsSuccess = true;
                     return Ok(_response);
                 }
             }
@@ -138,7 +138,7 @@ namespace TechShop_API.Controllers
                 
             }
             _response.StatusCode = HttpStatusCode.BadRequest;
-            _response.IsSuccsess = false;
+            _response.IsSuccess = false;
             _response.ErrorMessages.Add("Error while registering");
             return BadRequest(_response);
         }
