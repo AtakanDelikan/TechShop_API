@@ -20,6 +20,7 @@ namespace TechShop_API.Data
         public DbSet<OrderDetail> OrderDetails { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
+        public DbSet<CategoryAttribute> CategoryAttributes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

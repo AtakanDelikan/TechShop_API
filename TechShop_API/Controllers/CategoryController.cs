@@ -102,7 +102,7 @@ namespace TechShop_API.Controllers
 
         //TODO HttpPut API that updates category
 
-        [HttpDelete("{id:int}")]
+        [HttpDelete("{id:int}")] //TODO deleting a category deletes all category attributes of that category
         public async Task<ActionResult<ApiResponse>> DeleteCategory(int id)
         {
             try
@@ -121,10 +121,14 @@ namespace TechShop_API.Controllers
                     _response.IsSuccess = false;
                     return BadRequest();
                 }
-                // TODO cannot delete if products exist of this category
+                // cannot delete if products exist of this category
+                bool hasProduct = _db.Products.Any(u => u.CategoryId == id);
+                if (hasProduct)
+                {
+                    throw new ArgumentException("Cannot delete category that has products");
+                }
                 // cannot delete if sub-category exist
-                bool hasSubCategory = _db.Categories.Any(c => c.ParentCategoryId == id);
-
+                bool hasSubCategory = _db.Categories.Any(u => u.ParentCategoryId == id);
                 if (hasSubCategory)
                 {
                     throw new ArgumentException("Cannot delete category that has sub-category");
