@@ -25,7 +25,7 @@ namespace TechShop_API.Controllers
         public async Task<IActionResult> GetCategories()
         {
             _response.Result = _db.Categories
-                .Include(c => c.ParentCategory);
+                .Include(u => u.ParentCategory);
             _response.StatusCode = System.Net.HttpStatusCode.OK;
             return Ok(_response);
         }
@@ -67,7 +67,7 @@ namespace TechShop_API.Controllers
                     var parentCategoryId = categoryCreateDTO.ParentCategoryId;
                     if (parentCategoryId != null &&
                         _db.Categories
-                        .FirstOrDefault(u => u.Id == categoryCreateDTO.ParentCategoryId) == null)
+                        .FirstOrDefault(u => u.Id == parentCategoryId) == null)
                     {
                         // if a parent Id is given but that parent doesn't exist in the database
                         throw new ArgumentException("Parent category doesn't exist");
