@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TechShop_API.Utility;
 
 namespace TechShop_API.Models
 {
@@ -11,6 +12,7 @@ namespace TechShop_API.Models
         [ForeignKey("CategoryId")]
         public Category Category { get; set; }
         public string AttributeName { get; set; } = string.Empty;
-        public string DataType { get; set; } = "string"; //TODO create types in SD.cs
+        public SD.DataTypeEnum DataType { get; set; } = SD.DataTypeEnum.String; //TODO create types in SD.cs
+        
     }
 }

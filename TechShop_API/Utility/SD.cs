@@ -11,5 +11,13 @@
         public const string status_shipment = "Shipment";
         public const string status_delivered = "Delivered";
         public const string status_cancelled = "Cancelled";
+
+        public enum DataTypeEnum
+        {
+            String = 1,
+            Integer = 2,
+            Decimal = 3,
+            Boolean = 4
+        }
     }
 }

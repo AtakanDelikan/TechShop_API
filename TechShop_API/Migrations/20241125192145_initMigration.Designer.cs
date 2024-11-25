@@ -12,8 +12,8 @@ using TechShop_API.Data;
 namespace TechShop_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241117230203_addProduct")]
-    partial class addProduct
+    [Migration("20241125192145_initMigration")]
+    partial class initMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -274,6 +274,30 @@ namespace TechShop_API.Migrations
                     b.HasIndex("ParentCategoryId");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("TechShop_API.Models.CategoryAttribute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AttributeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("DataType")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("CategoryAttributes");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.Laptop", b =>
@@ -569,6 +593,17 @@ namespace TechShop_API.Migrations
                         .HasForeignKey("ParentCategoryId");
 
                     b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("TechShop_API.Models.CategoryAttribute", b =>
+                {
+                    b.HasOne("TechShop_API.Models.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.OrderDetail", b =>
