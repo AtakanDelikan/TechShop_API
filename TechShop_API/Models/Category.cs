@@ -13,6 +13,6 @@ namespace TechShop_API.Models
         public int? ParentCategoryId { get; set; } // Nullable for top-level categories
         [ForeignKey("ParentCategoryId")]
         public Category? ParentCategory { get; set; } // Navigation property for parent
-        //public ICollection<Category>? SubCategories { get; set; } // Subcategories
+        public IEnumerable<Category>? SubCategories { get; set; } // Subcategories
     }
 }

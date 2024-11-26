@@ -574,7 +574,7 @@ namespace TechShop_API.Migrations
             modelBuilder.Entity("TechShop_API.Models.Category", b =>
                 {
                     b.HasOne("TechShop_API.Models.Category", "ParentCategory")
-                        .WithMany()
+                        .WithMany("SubCategories")
                         .HasForeignKey("ParentCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
 
@@ -647,6 +647,11 @@ namespace TechShop_API.Migrations
                     b.Navigation("CategoryAttribute");
 
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("TechShop_API.Models.Category", b =>
+                {
+                    b.Navigation("SubCategories");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.OrderHeader", b =>

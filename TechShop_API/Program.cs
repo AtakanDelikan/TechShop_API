@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using TechShop_API.Data;
 using TechShop_API.Models;
+using TechShop_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,10 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddCors();
 
 builder.Services.AddControllers();
+
+// Register custom services
+builder.Services.AddScoped<CategoryService>();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -6,6 +6,7 @@ using System.Net;
 using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
+using TechShop_API.Services;
 
 namespace TechShop_API.Controllers
 {
@@ -15,17 +16,18 @@ namespace TechShop_API.Controllers
     {
         private readonly ApplicationDbContext _db;
         private ApiResponse _response;
-        public CategoryController(ApplicationDbContext db)
+        private readonly CategoryService _categoryService;
+        public CategoryController(ApplicationDbContext db, CategoryService categoryService)
         {
             _db = db;
             _response = new ApiResponse();
+            _categoryService = categoryService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetCategories()
         {
-            _response.Result = _db.Categories
-                .Include(u => u.ParentCategory);
+            _response.Result = await _categoryService.GetCategoriesTreeAsync();
             _response.StatusCode = System.Net.HttpStatusCode.OK;
             return Ok(_response);
         }
