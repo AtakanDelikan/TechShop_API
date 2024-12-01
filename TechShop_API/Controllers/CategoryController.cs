@@ -60,13 +60,18 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateCategory([FromForm] CategoryCreateDTO categoryCreateDTO)
+        public async Task<ActionResult<ApiResponse>> CreateCategory([FromBody] CategoryCreateDTO categoryCreateDTO)
         {
             try
             {
                 if (ModelState.IsValid)
                 {
                     var parentCategoryId = categoryCreateDTO.ParentCategoryId;
+                    if (parentCategoryId == 0)
+                    {
+                        parentCategoryId = null;
+                    }
+
                     if (parentCategoryId != null &&
                         _db.Categories
                         .FirstOrDefault(u => u.Id == parentCategoryId) == null)
@@ -74,12 +79,12 @@ namespace TechShop_API.Controllers
                         // if a parent Id is given but that parent doesn't exist in the database
                         throw new ArgumentException("Parent category doesn't exist");
                     }
-                    
+
                     Category CategoryToCreate = new()
                     {
                         Name = categoryCreateDTO.Name,
                         Description = categoryCreateDTO.Description,
-                        ParentCategoryId = categoryCreateDTO.ParentCategoryId,
+                        ParentCategoryId = parentCategoryId,
                     };
                     _db.Categories.Add(CategoryToCreate);
                     _db.SaveChanges();
