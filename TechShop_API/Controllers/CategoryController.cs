@@ -88,8 +88,9 @@ namespace TechShop_API.Controllers
                     };
                     _db.Categories.Add(CategoryToCreate);
                     _db.SaveChanges();
-                    _response.Result = CategoryToCreate;
+                    _response.Result = categoryCreateDTO;
                     _response.StatusCode = HttpStatusCode.Created;
+                    _response.IsSuccess = true;
                     return _response;
                 }
                 else

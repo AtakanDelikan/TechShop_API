@@ -14,5 +14,6 @@ namespace TechShop_API.Models
         [ForeignKey("ParentCategoryId")]
         public Category? ParentCategory { get; set; } // Navigation property for parent
         public IEnumerable<Category>? SubCategories { get; set; } // Subcategories
+        public ICollection<CategoryAttribute> CategoryAttributes { get; set; } = new List<CategoryAttribute>();
     }
 }

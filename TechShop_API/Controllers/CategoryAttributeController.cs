@@ -30,6 +30,28 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
+        [HttpGet("{id:int}", Name = "GetCategoryAttribute")]
+        public async Task<IActionResult> GetCategoryAttribute(int id)
+        {
+            if (id == 0)
+            {
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                _response.IsSuccess = false;
+                return BadRequest(_response);
+            }
+            Category category = _db.Categories
+                .Include(c => c.CategoryAttributes)
+                .FirstOrDefault(u => u.Id == id);
+            if (category == null)
+            {
+                _response.StatusCode = HttpStatusCode.NotFound;
+                _response.IsSuccess = false;
+                return NotFound(_response);
+            }
+            _response.Result = category.CategoryAttributes;
+            _response.StatusCode = HttpStatusCode.OK;
+            return Ok(_response);
+        }
 
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> CreateCategoryAttribute([FromForm] CategoryAttributeCreateDTO categoryAttributeCreateDTO)
