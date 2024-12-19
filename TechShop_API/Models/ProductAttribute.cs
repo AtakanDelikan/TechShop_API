@@ -13,9 +13,9 @@ namespace TechShop_API.Models
         public int CategoryAttributeId { get; set; }
         [ForeignKey("CategoryAttributeId")]
         public CategoryAttribute CategoryAttribute { get; set; }
-        public string String { get; set; }
-        public int Integer { get; set; }
-        public double Decimal { get; set; }
-        public bool Boolean { get; set; }
+        public string? String { get; set; }
+        public int? Integer { get; set; }
+        public double? Decimal { get; set; }
+        public bool? Boolean { get; set; }
     }
 }

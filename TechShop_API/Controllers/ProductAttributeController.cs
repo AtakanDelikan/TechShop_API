@@ -35,7 +35,7 @@ namespace TechShop_API.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateProductAttribute([FromForm] ProductAttributeCreateDTO productAttributeCreateDTO)
+        public async Task<ActionResult<ApiResponse>> CreateProductAttribute([FromBody] ProductAttributeCreateDTO productAttributeCreateDTO)
         {
             try
             {
@@ -100,8 +100,11 @@ namespace TechShop_API.Controllers
                                 if (productAttributeCreateDTO.Value == "true") {
                                     ProductAttributeToCreate.Boolean = true;
                                 }
-                                else {
+                                else if (productAttributeCreateDTO.Value == "false") {
                                     ProductAttributeToCreate.Boolean = false;
+                                }
+                                else {
+                                    ProductAttributeToCreate.Boolean = null;
                                 }
                                 break;
                             }

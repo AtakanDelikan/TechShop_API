@@ -54,7 +54,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateCategoryAttribute([FromForm] CategoryAttributeCreateDTO categoryAttributeCreateDTO)
+        public async Task<ActionResult<ApiResponse>> CreateCategoryAttribute([FromBody] CategoryAttributeCreateDTO categoryAttributeCreateDTO)
         {
             try
             {

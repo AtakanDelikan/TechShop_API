@@ -32,7 +32,7 @@ namespace TechShop_API.Controllers
 
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateProduct([FromForm] ProductCreateDTO productCreateDTO)
+        public async Task<ActionResult<ApiResponse>> CreateProduct([FromBody] ProductCreateDTO productCreateDTO)
         {
             try
             {
