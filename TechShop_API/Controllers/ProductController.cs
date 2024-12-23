@@ -25,7 +25,18 @@ namespace TechShop_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetProducts()
         {
-            _response.Result = _db.Products.Include(u => u.Category);
+            _response.Result = _db.Products.Include(u => u.Category)
+                .Select(product => new
+                {
+                    product.Id,
+                    product.CategoryId,
+                    Category = new { product.Category.Name }, // Only select the name
+                    product.Name,
+                    product.Description,
+                    product.Price,
+                    product.Stock,
+                    Images = product.ProductImages.Select(image => image.Url).ToList()
+                });
             _response.StatusCode = System.Net.HttpStatusCode.OK;
             return Ok(_response);
         }
@@ -110,8 +121,6 @@ namespace TechShop_API.Controllers
 
             return _response;
         }
-
-
 
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TechShop_API.Data;
 
@@ -11,9 +12,11 @@ using TechShop_API.Data;
 namespace TechShop_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241222205140_addProductImage")]
+    partial class addProductImage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -676,7 +679,7 @@ namespace TechShop_API.Migrations
             modelBuilder.Entity("TechShop_API.Models.ProductImage", b =>
                 {
                     b.HasOne("TechShop_API.Models.Product", "Product")
-                        .WithMany("Images")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -694,11 +697,6 @@ namespace TechShop_API.Migrations
             modelBuilder.Entity("TechShop_API.Models.OrderHeader", b =>
                 {
                     b.Navigation("OrderDetails");
-                });
-
-            modelBuilder.Entity("TechShop_API.Models.Product", b =>
-                {
-                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.ShoppingCart", b =>

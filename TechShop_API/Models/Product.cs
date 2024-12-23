@@ -16,5 +16,6 @@ namespace TechShop_API.Models
         [Range(1, int.MaxValue)]
         public double Price { get; set; }
         public int Stock { get; set; }
+        public ICollection<ProductImage> ProductImages { get; set; }
     }
 }
