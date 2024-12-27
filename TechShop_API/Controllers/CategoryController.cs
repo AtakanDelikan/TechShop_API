@@ -142,7 +142,10 @@ namespace TechShop_API.Controllers
                     throw new ArgumentException("Cannot delete category that has sub-category");
                 }
 
+                var categoryAttributes = _db.CategoryAttributes.Where(ca => ca.CategoryId == id);
+                _db.CategoryAttributes.RemoveRange(categoryAttributes);
                 _db.Categories.Remove(categoryFromDb);
+
                 _db.SaveChanges();
                 _response.StatusCode = HttpStatusCode.NoContent;
                 return Ok(_response);

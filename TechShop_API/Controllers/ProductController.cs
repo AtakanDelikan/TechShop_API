@@ -41,6 +41,36 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
+        // Get products by category ID
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId)
+        {
+            IQueryable<Product> productsQuery = _db.Products;//.Include(p => p.ProductImages);
+
+            if (categoryId != 0)
+            {
+                // Only filter by category if categoryId is not 0
+                productsQuery = productsQuery.Where(p => p.CategoryId == categoryId);
+            }
+
+            var products = await productsQuery
+                .Select(product => new
+                {
+                    product.Id,
+                    product.CategoryId,
+                    Category = new { product.Category.Name }, // Only select the name
+                    product.Name,
+                    product.Description,
+                    product.Price,
+                    product.Stock,
+                    Images = product.ProductImages.Select(image => image.Url).ToList()
+                })
+                .ToListAsync();
+            _response.Result = products;
+            _response.StatusCode = System.Net.HttpStatusCode.OK;
+            return Ok(_response);
+        }
+
 
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> CreateProduct([FromBody] ProductCreateDTO productCreateDTO)
@@ -107,7 +137,12 @@ namespace TechShop_API.Controllers
                     return BadRequest();
                 }
 
+                var productAttributes = _db.ProductAttributes.Where(pa => pa.ProductId == id);
+                _db.ProductAttributes.RemoveRange(productAttributes);
+                var productImages = _db.ProductImages.Where(pi => pi.ProductId == id);
+                _db.ProductImages.RemoveRange(productImages);
                 _db.Products.Remove(productFromDb);
+
                 _db.SaveChanges();
                 _response.StatusCode = HttpStatusCode.NoContent;
                 return Ok(_response);
@@ -117,6 +152,7 @@ namespace TechShop_API.Controllers
                 _response.IsSuccess = false;
                 _response.ErrorMessages
                     = new List<string>() { ex.ToString() };
+                return BadRequest(_response);
             }
 
             return _response;
