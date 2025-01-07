@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using TechShop_API.Models.Dto;
 
 namespace TechShop_API.Models
 {
@@ -17,5 +18,7 @@ namespace TechShop_API.Models
         public double Price { get; set; }
         public int Stock { get; set; }
         public ICollection<ProductImage> ProductImages { get; set; }
+        [NotMapped]
+        public ICollection<ProductAttributeDTO> ProductAttributes { get; set; }
     }
 }

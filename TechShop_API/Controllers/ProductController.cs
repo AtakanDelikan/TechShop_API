@@ -7,6 +7,7 @@ using System.Net;
 using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
+using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
 {
@@ -38,6 +39,49 @@ namespace TechShop_API.Controllers
                     Images = product.ProductImages.Select(image => image.Url).ToList()
                 });
             _response.StatusCode = System.Net.HttpStatusCode.OK;
+            return Ok(_response);
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetProduct(int id)
+        {
+            Product product = _db.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefault(u => u.Id == id);
+
+            if (product == null)
+            {
+                _response.StatusCode = HttpStatusCode.NotFound;
+                _response.IsSuccess = false;
+                return NotFound(_response);
+            }
+
+            var dbProductAttributes = _db.ProductAttributes
+                .Where(pa => pa.ProductId == id)
+                .Include(pa => pa.CategoryAttribute)
+                .ToList();
+
+            var productAttributes = dbProductAttributes.Select(pa => new ProductAttributeDTO
+            {
+                Name = pa.CategoryAttribute.AttributeName,
+                Value = pa.CategoryAttribute.DataType switch
+                {
+                    SD.DataTypeEnum.String => pa.String,
+                    SD.DataTypeEnum.Integer => pa.Integer?.ToString(),
+                    SD.DataTypeEnum.Decimal => pa.Decimal?.ToString("F2"),
+                    SD.DataTypeEnum.Boolean => pa.Boolean?.ToString(),
+                    _ => null // Handle unexpected enum values
+                }
+            }).ToList();
+            product.ProductAttributes = productAttributes;
+
+            if (product != null && product.ProductImages != null)
+            {
+                product.ProductImages = product.ProductImages.OrderBy(pi => pi.DisplayOrder).ToList();
+            }
+
+            _response.Result = product;
+            _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }
 
