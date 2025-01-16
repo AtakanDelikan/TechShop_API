@@ -69,6 +69,11 @@ namespace TechShop_API.Controllers
                         case SD.DataTypeEnum.String:
                             {
                                 ProductAttributeToCreate.String = value;
+                                if (!categoryAttribute.UniqueValues.Contains(value))
+                                {
+                                    categoryAttribute.UniqueValues.Add(value);
+                                    _db.CategoryAttributes.Update(categoryAttribute);
+                                }
                                 break;
                             }
                         case SD.DataTypeEnum.Integer:
@@ -76,6 +81,20 @@ namespace TechShop_API.Controllers
                                 if (int.TryParse(value, out int result))
                                 {
                                     ProductAttributeToCreate.Integer = result;
+                                    if (!categoryAttribute.Min.HasValue)
+                                    {
+                                        categoryAttribute.Min = result;
+                                        categoryAttribute.Max = result;
+                                    }
+                                    if (categoryAttribute.Min > result)
+                                    {
+                                        categoryAttribute.Min = result;
+                                    }
+                                    if (categoryAttribute.Max < result)
+                                    {
+                                        categoryAttribute.Max = result;
+                                    }
+                                    _db.CategoryAttributes.Update(categoryAttribute);
                                 }
                                 else
                                 {
@@ -88,6 +107,20 @@ namespace TechShop_API.Controllers
                                 if (double.TryParse(value, out double result))
                                 {
                                     ProductAttributeToCreate.Decimal = result;
+                                    if (!categoryAttribute.Min.HasValue)
+                                    {
+                                        categoryAttribute.Min = result;
+                                        categoryAttribute.Max = result;
+                                    }
+                                    if (categoryAttribute.Min > result)
+                                    {
+                                        categoryAttribute.Min = result;
+                                    }
+                                    if (categoryAttribute.Max < result)
+                                    {
+                                        categoryAttribute.Max = result;
+                                    }
+                                    _db.CategoryAttributes.Update(categoryAttribute);
                                 }
                                 else
                                 {

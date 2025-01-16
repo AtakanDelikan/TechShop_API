@@ -110,7 +110,7 @@ namespace TechShop_API.Controllers
 
         //TODO HttpPut API that updates category
 
-        [HttpDelete("{id:int}")] //TODO deleting a category deletes all category attributes of that category
+        [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteCategory(int id)
         {
             try

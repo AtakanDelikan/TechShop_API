@@ -35,12 +35,14 @@ namespace TechShop_API.Controllers
                         .Include(u => u.CartItems).ThenInclude(u => u.Laptop)
                         .FirstOrDefault(u => u.UserId == userId);
                 }
-                if (shoppingCart.CartItems != null && shoppingCart.CartItems.Count > 0)
+                if (shoppingCart == null) {
+                    _response.Result = new ShoppingCart();
+                } else if (shoppingCart.CartItems != null && shoppingCart.CartItems.Count > 0)
                 {
                     shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity*u.Laptop.Price);
+                    _response.Result = shoppingCart;
                 }
 
-                _response.Result = shoppingCart;
                 _response.StatusCode = HttpStatusCode.OK;
                 return Ok(_response);
             }

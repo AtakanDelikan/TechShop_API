@@ -115,6 +115,110 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
+        //TODO put this into separate file
+        private IQueryable<Product> filterProduct(IQueryable<Product> productsQuery, string attributeFilters)
+        {
+            string[] attributeFilterParts = attributeFilters.Split(';');
+            foreach (string part in attributeFilterParts)
+            {
+                // Split by '[' to separate key and values
+                int startBracketIndex = part.IndexOf('[');
+                if (startBracketIndex == -1 || !part.EndsWith("]"))
+                    continue; // Invalid format, skip
+
+                // Extract key
+                string keyPart = part.Substring(0, startBracketIndex);
+                if (int.TryParse(keyPart, out int key))
+                {
+                    // Extract values and split by '﹐'
+                    string valuesPart = part.Substring(startBracketIndex + 1, part.Length - startBracketIndex - 2);
+                    string[] values = valuesPart.Split('﹐');
+
+                    CategoryAttribute categoryAttribute = _db.CategoryAttributes.FirstOrDefault(ca => ca.Id == key);
+                    if (categoryAttribute == null)
+                    {
+                        continue;
+                    }
+
+                    IQueryable<ProductAttribute> productAttributes = _db.ProductAttributes
+                        .Where(pa => pa.CategoryAttributeId == key);
+                    productAttributes = categoryAttribute.DataType switch
+                    {
+                        SD.DataTypeEnum.String => filterString(productAttributes, values),
+                        SD.DataTypeEnum.Integer => filterInteger(productAttributes, values),
+                        SD.DataTypeEnum.Decimal => filterDecimal(productAttributes, values),
+                        SD.DataTypeEnum.Boolean => filterBoolean(productAttributes, values),
+                        _ => productAttributes // Handle unexpected enum values
+                    };
+
+                    productsQuery = productsQuery
+                        .Where(product => productAttributes.Any(pa => pa.ProductId == product.Id)); //TODO this seems to be broken
+                }
+            }
+            return productsQuery;
+
+        }
+
+        private IQueryable<ProductAttribute> filterString(IQueryable<ProductAttribute> productAttributes, string[] values)
+        {
+            return productAttributes.Where(pa => values.Contains(pa.String));
+        }
+
+        private IQueryable<ProductAttribute> filterInteger(IQueryable<ProductAttribute> productAttributes, string[] values)
+        {
+            // make sure values has 2 integers
+            if (values.Length != 2) { return productAttributes; }
+            if (Int32.TryParse(values[0], out int min) && Int32.TryParse(values[1], out int max))
+            {
+            return productAttributes.Where(pa => pa.Integer.HasValue && pa.Integer>=min && pa.Integer<=max);
+            } else { return productAttributes; }
+        }
+
+        private IQueryable<ProductAttribute> filterDecimal(IQueryable<ProductAttribute> productAttributes, string[] values)
+        {
+            // make sure values has 2 decimals
+            if (values.Length != 2) { return productAttributes; }
+            if (double.TryParse(values[0], out double min) && double.TryParse(values[1], out double max))
+            {
+                return productAttributes.Where(pa => pa.Decimal.HasValue && pa.Decimal >= min && pa.Decimal <= max);
+            }
+            else { return productAttributes; }
+        }
+
+        private IQueryable<ProductAttribute> filterBoolean(IQueryable<ProductAttribute> productAttributes, string[] values)
+        {
+            // make sure values has 1 boolean
+            if (values.Length != 1) { return productAttributes; }
+            if (values[0] == "true")
+            {
+                return productAttributes.Where(pa => pa.Boolean.HasValue && pa.Boolean == true);
+            } else if (values[0] == "false")
+            {
+                return productAttributes.Where(pa => pa.Boolean.HasValue && pa.Boolean == false);
+            }
+            else { return productAttributes; }
+        }
+
+        [HttpGet("filter")]
+        public async Task<IActionResult> GetFilteredProducts([FromQuery] Dictionary<string, string> filters)
+        {
+            IQueryable<Product> productsQuery = _db.Products;
+
+            if (filters.TryGetValue("category", out string categoryIdString))
+            {
+                if (Int32.TryParse(categoryIdString, out int categoryId))
+                {
+                    productsQuery = productsQuery.Where(p => p.CategoryId == categoryId);
+                }
+            }
+
+            if (filters.TryGetValue("attributes", out string attributeFilters) && attributeFilters!=null)
+            {
+                productsQuery = filterProduct(productsQuery, attributeFilters);
+            }
+            productsQuery = productsQuery.Include(p => p.ProductImages);
+            return Ok(productsQuery);
+        }
 
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> CreateProduct([FromBody] ProductCreateDTO productCreateDTO)
