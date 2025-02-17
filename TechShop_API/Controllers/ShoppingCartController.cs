@@ -32,14 +32,15 @@ namespace TechShop_API.Controllers
                 else
                 {
                     shoppingCart = _db.ShoppingCarts
-                        .Include(u => u.CartItems).ThenInclude(u => u.Laptop)
+                        .Include(u => u.CartItems).ThenInclude(u => u.Product)
+                        .ThenInclude(p => p.ProductImages)
                         .FirstOrDefault(u => u.UserId == userId);
                 }
                 if (shoppingCart == null) {
                     _response.Result = new ShoppingCart();
                 } else if (shoppingCart.CartItems != null && shoppingCart.CartItems.Count > 0)
                 {
-                    shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity*u.Laptop.Price);
+                    shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity*u.Product.Price);
                     _response.Result = shoppingCart;
                 }
 
@@ -57,7 +58,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<ApiResponse>> AddOrUpdateItemInCart(string userId, int laptopId, int updateQuantityBy)
+        public async Task<ActionResult<ApiResponse>> AddOrUpdateItemInCart(string userId, int productId, int updateQuantityBy)
         {
             // 1 shopping cat per 1 user
             // if updatequantityby is 0, item will be removed
@@ -68,8 +69,8 @@ namespace TechShop_API.Controllers
             // user removes an existing item
 
             ShoppingCart shoppingCart = _db.ShoppingCarts.Include(u => u.CartItems).FirstOrDefault(u => u.UserId == userId);
-            Laptop laptop = _db.Laptops.FirstOrDefault(u => u.Id == laptopId);
-            if (laptop == null)
+            Product product = _db.Products.FirstOrDefault(u => u.Id == productId);
+            if (product == null)
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.IsSuccess = false;
@@ -84,10 +85,10 @@ namespace TechShop_API.Controllers
 
                 CartItem newCartItem = new()
                 {
-                    LaptopId = laptopId,
+                    ProductId = productId,
                     Quantity = updateQuantityBy,
                     ShoppingCartId = newCart.Id,
-                    Laptop = null,
+                    Product = null,
                 };
                 _db.CartItems.Add(newCartItem);
                 _db.SaveChanges();
@@ -95,16 +96,16 @@ namespace TechShop_API.Controllers
             else
             {
                 // shopping cart exist
-                CartItem cartItemInCart = shoppingCart.CartItems.FirstOrDefault(u => u.LaptopId == laptopId);
+                CartItem cartItemInCart = shoppingCart.CartItems.FirstOrDefault(u => u.ProductId == productId);
                 if (cartItemInCart == null)
                 {
                     // item does not exist in the current cart
                     CartItem newCartItem = new()
                     {
-                        LaptopId = laptopId,
+                        ProductId = productId,
                         Quantity = updateQuantityBy,
                         ShoppingCartId = shoppingCart.Id,
-                        Laptop=null,
+                        Product = null,
                     };
                     _db.CartItems.Add(newCartItem);
                     _db.SaveChanges();

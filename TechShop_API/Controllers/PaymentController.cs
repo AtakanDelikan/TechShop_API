@@ -27,7 +27,7 @@ namespace TechShop_API.Controllers
         {
             ShoppingCart shoppingCart = _db.ShoppingCarts
                 .Include(u => u.CartItems)
-                .ThenInclude(u => u.Laptop)
+                .ThenInclude(u => u.Product)
                 .FirstOrDefault(u => u.UserId == userId);
 
             if (shoppingCart == null || shoppingCart.CartItems == null || shoppingCart.CartItems.Count == 0)
@@ -40,7 +40,7 @@ namespace TechShop_API.Controllers
             #region Create Payment Intent
 
             StripeConfiguration.ApiKey = _configuration["StripeSettings:SecretKey"];
-            shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity * u.Laptop .Price);
+            shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity * u.Product.Price);
 
             PaymentIntentCreateOptions options = new()
             {
