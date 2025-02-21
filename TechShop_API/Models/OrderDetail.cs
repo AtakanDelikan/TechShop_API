@@ -10,9 +10,9 @@ namespace TechShop_API.Models
         [Required]
         public int OrderHeaderId { get; set; }
         [Required]
-        public int LaptopId { get; set; }
-        [ForeignKey("LaptopId")]
-        public Laptop Laptop { get; set; }
+        public int ProductId { get; set; }
+        [ForeignKey("ProductId")]
+        public Product Product { get; set; }
         [Required]
         public int Quantity { get; set; }
         [Required]

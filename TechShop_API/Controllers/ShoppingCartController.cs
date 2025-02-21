@@ -134,5 +134,45 @@ namespace TechShop_API.Controllers
 
             return _response;
         }
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> DeleteShoppingCart(int id)
+        {
+            try
+            {
+                if (id == 0)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    return BadRequest();
+                }
+
+                ShoppingCart shoppingCartFromDb = await _db.ShoppingCarts
+                    .Include(sc => sc.CartItems)
+                    .FirstOrDefaultAsync(sc => sc.Id == id);
+                if (shoppingCartFromDb == null)
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    return BadRequest();
+                }
+
+
+                ICollection<CartItem> CartItems = shoppingCartFromDb.CartItems;
+                _db.CartItems.RemoveRange(CartItems);
+
+                _db.ShoppingCarts.Remove(shoppingCartFromDb);
+                _db.SaveChanges();
+                _response.StatusCode = HttpStatusCode.NoContent;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
+        }
     }
 }

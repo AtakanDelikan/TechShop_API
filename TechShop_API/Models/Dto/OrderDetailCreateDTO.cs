@@ -5,7 +5,7 @@ namespace TechShop_API.Models.Dto
     public class OrderDetailCreateDTO
     {
         [Required]
-        public int LaptopId { get; set; }
+        public int ProductId { get; set; }
         [Required]
         public int Quantity { get; set; }
         [Required]

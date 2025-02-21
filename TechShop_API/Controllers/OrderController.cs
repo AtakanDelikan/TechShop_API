@@ -27,7 +27,7 @@ namespace TechShop_API.Controllers
             try
             {
                 var orderHeaders = _db.OrderHeaders.Include(u => u.OrderDetails)
-                    .ThenInclude(u => u.Laptop)
+                    .ThenInclude(u => u.Product)
                     .OrderByDescending(u => u.OrderHeaderId);
                 if (!string.IsNullOrEmpty(userId))
                 {
@@ -62,7 +62,7 @@ namespace TechShop_API.Controllers
 
 
                 var orderHeader = _db.OrderHeaders.Include(u => u.OrderDetails)
-                    .ThenInclude(u => u.Laptop)
+                    .ThenInclude(u => u.Product)
                     .Where(u => u.OrderHeaderId == id);
                 if (orderHeader == null)
                 {
@@ -110,7 +110,7 @@ namespace TechShop_API.Controllers
                         {
                             OrderHeaderId = order.OrderHeaderId,
                             ItemName = orderDetailDTO.ItemName,
-                            LaptopId = orderDetailDTO.LaptopId,
+                            ProductId = orderDetailDTO.ProductId,
                             Price = orderDetailDTO.Price,
                             Quantity = orderDetailDTO.Quantity,
                         };
