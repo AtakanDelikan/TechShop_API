@@ -24,6 +24,7 @@ namespace TechShop_API.Data
         public DbSet<CategoryAttribute> CategoryAttributes { get; set; }
         public DbSet<ProductAttribute> ProductAttributes { get; set; }
         public DbSet<ProductImage> ProductImages { get; set; }
+        public DbSet<Comment> Comments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
