@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing.Printing;
 using System.Net;
 using TechShop_API.Data;
 using TechShop_API.Models;
@@ -218,6 +219,48 @@ namespace TechShop_API.Controllers
             }
             productsQuery = productsQuery.Include(p => p.ProductImages);
             return Ok(productsQuery);
+        }
+
+        [HttpGet("search")]
+        public async Task<ActionResult<ApiResponse>> GetSearchedProducts(string searchTerm, int pageNumber = 1, int pageSize = 10)
+        {
+            try
+            {
+                var productIdsFromAttributes = _db.ProductAttributes
+                .Where(pa => pa.String.Contains(searchTerm))
+                .Select(pa => pa.ProductId);
+
+                // Query to get total count before pagination
+                var query = _db.Products
+                    .Where(p => p.Name.Contains(searchTerm) ||
+                                p.Description.Contains(searchTerm) ||
+                                productIdsFromAttributes.Contains(p.Id));
+
+                int totalProducts = await query.CountAsync(); // Total matching products
+                int totalPages = (int)Math.Ceiling((double)totalProducts / pageSize); // Calculate pages
+
+                var products = await query
+                    .OrderBy(p => p.Name)
+                    .Skip(pageSize * (pageNumber - 1))
+                    .Take(pageSize)
+                    .ToListAsync();
+                _response.Result = new
+                {
+                    Products = products,
+                    TotalItems = totalProducts,
+                    TotalPages = totalPages,
+                    CurrentPage = pageNumber
+                };
+                _response.StatusCode = HttpStatusCode.OK;
+                return _response;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+            return _response;
         }
 
         [HttpPost]

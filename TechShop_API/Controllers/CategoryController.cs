@@ -59,6 +59,30 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
+        [HttpGet("search")]
+        public async Task<ActionResult<ApiResponse>> GetSearchedCategories(string searchTerm, int count = 5)
+        {
+            try
+            {
+                var categories = await _db.Categories
+                    .Where(c => c.Name.Contains(searchTerm) ||
+                                c.Description.Contains(searchTerm))
+                    .OrderBy(c => c.Name)
+                    .Take(count)
+                    .ToListAsync();
+                _response.Result = categories;
+                _response.StatusCode = HttpStatusCode.OK;
+                return _response;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+            return _response;
+        }
+
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> CreateCategory([FromBody] CategoryCreateDTO categoryCreateDTO)
         {
