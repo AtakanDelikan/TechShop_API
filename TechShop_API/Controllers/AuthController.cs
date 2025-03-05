@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -63,7 +64,7 @@ namespace TechShop_API.Controllers
                     new Claim(ClaimTypes.Email, userFromDb.UserName.ToString()),
                     new Claim(ClaimTypes.Role, roles.FirstOrDefault())
                 }),
-                Expires = DateTime.UtcNow.AddDays(1),
+                Expires = DateTime.UtcNow.AddYears(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
@@ -142,6 +143,68 @@ namespace TechShop_API.Controllers
             _response.IsSuccess = false;
             _response.ErrorMessages.Add("Error while registering");
             return BadRequest(_response);
+        }
+
+        [HttpGet("userdata")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> GetUserData()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _db.Users.FindAsync(userId);
+            if (user == null) return Unauthorized();
+
+            _response.Result = new UserDetailsDTO
+            {
+                Name = user.Name,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Address = user.Address,
+            };
+            _response.StatusCode = HttpStatusCode.OK;
+            return Ok(_response);
+        }
+
+        [HttpPut("userdata")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse>> UpdateUserDetails([FromForm] UserDetailsDTO model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var user = await _db.Users.FindAsync(userId);
+            if (user == null) return Unauthorized();
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (model == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    user.Name = model.Name;
+                    user.Email = model.Email;
+                    user.PhoneNumber = model.PhoneNumber;
+                    user.Address = model.Address;
+
+                    _db.ApplicationUsers.Update(user);
+                    _db.SaveChanges();
+                    _response.StatusCode = HttpStatusCode.NoContent;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
         }
     }
 }
