@@ -117,6 +117,7 @@ namespace TechShop_API.Controllers
         }
 
         //TODO put this into separate file
+        #region Filter Helper Functions
         private IQueryable<Product> filterProduct(IQueryable<Product> productsQuery, string attributeFilters)
         {
             string[] attributeFilterParts = attributeFilters.Split(';');
@@ -153,7 +154,7 @@ namespace TechShop_API.Controllers
                     };
 
                     productsQuery = productsQuery
-                        .Where(product => productAttributes.Any(pa => pa.ProductId == product.Id)); //TODO this seems to be broken
+                        .Where(product => productAttributes.Any(pa => pa.ProductId == product.Id));
                 }
             }
             return productsQuery;
@@ -200,8 +201,10 @@ namespace TechShop_API.Controllers
             else { return productAttributes; }
         }
 
+        #endregion
+
         [HttpGet("filter")]
-        public async Task<IActionResult> GetFilteredProducts([FromQuery] Dictionary<string, string> filters)
+        public async Task<ActionResult<ApiResponse>> GetFilteredProducts([FromQuery] Dictionary<string, string> filters, int pageNumber = 1, int pageSize = 10)
         {
             IQueryable<Product> productsQuery = _db.Products;
 
@@ -213,12 +216,54 @@ namespace TechShop_API.Controllers
                 }
             }
 
+            if (filters.TryGetValue("price", out string? priceString) && !string.IsNullOrWhiteSpace(priceString))
+            {
+                var values = priceString.Split('﹐');
+
+                if (values.Length == 2 &&
+                    decimal.TryParse(values[0], out decimal minPrice) &&
+                    decimal.TryParse(values[1], out decimal maxPrice) &&
+                    minPrice <= maxPrice)
+                {
+                    productsQuery = productsQuery.Where(p => p.Price >= minPrice && p.Price <= maxPrice);
+                }
+            }
+
             if (filters.TryGetValue("attributes", out string attributeFilters) && attributeFilters!=null)
             {
                 productsQuery = filterProduct(productsQuery, attributeFilters);
             }
-            productsQuery = productsQuery.Include(p => p.ProductImages);
-            return Ok(productsQuery);
+
+            if (filters.TryGetValue("search", out string? searchTerm) && !string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var productIdsFromAttributes = _db.ProductAttributes
+                .Where(pa => pa.String.Contains(searchTerm))
+                .Select(pa => pa.ProductId);
+
+                productsQuery = productsQuery
+                    .Where(p => p.Name.Contains(searchTerm) ||
+                                p.Description.Contains(searchTerm) ||
+                                productIdsFromAttributes.Contains(p.Id));
+            }
+
+            int totalProducts = await productsQuery.CountAsync(); // Total matching products
+            int totalPages = (int)Math.Ceiling((double)totalProducts / pageSize); // Calculate pages
+
+            var products = await productsQuery
+                    .OrderBy(p => p.Name)
+                    .Skip(pageSize * (pageNumber - 1))
+                    .Take(pageSize)
+                    .Include(p => p.ProductImages)
+                    .ToListAsync();
+            _response.Result = new
+            {
+                Products = products,
+                TotalItems = totalProducts,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber
+            };
+            _response.StatusCode = HttpStatusCode.OK;
+            return _response;
         }
 
         [HttpGet("search")]

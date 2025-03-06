@@ -48,7 +48,16 @@ namespace TechShop_API.Controllers
                 _response.IsSuccess = false;
                 return NotFound(_response);
             }
-            _response.Result = category.CategoryAttributes;
+
+            decimal maxPrice = _db.Products
+                .Where(p => p.CategoryId == id)
+                .Max(p => (decimal?)p.Price) ?? 0;
+
+            _response.Result = new
+            {
+                Attributes = category.CategoryAttributes,
+                MaxPrice = decimal.ToDouble(maxPrice)
+            };
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }

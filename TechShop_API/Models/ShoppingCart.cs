@@ -9,7 +9,7 @@ namespace TechShop_API.Models
         public ICollection<CartItem> CartItems { get; set; }
 
         [NotMapped]
-        public double CartTotal { get; set; }
+        public decimal CartTotal { get; set; }
         [NotMapped]
         public string StripePaymentIntentId { get; set; }
         [NotMapped]
