@@ -51,6 +51,29 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
+        private async Task recalculateRating(int productId)
+        {
+            Product product = _db.Products
+                .FirstOrDefault(u => u.Id == productId);
+
+            if (product == null)
+            {
+                return;
+            }
+
+            var ratingsQuery = _db.Comments
+                .Where(c => c.ProductId == productId)
+                .Select(c => c.Rating);
+
+            double averageRating = ratingsQuery.Any()
+                ? ratingsQuery.Average()
+                : 0;
+
+            product.Rating = averageRating;
+            _db.Products.Update(product);
+            await _db.SaveChangesAsync();
+        }
+
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<ApiResponse>> CreateComment([FromBody] CommentCreateDTO commentDto)
@@ -65,12 +88,13 @@ namespace TechShop_API.Controllers
                     ProductId = commentDto.ProductId,
                     ApplicationUserId = user.Id,
                     Content = commentDto.Content,
-                    Rating= commentDto.Rating,
+                    Rating = commentDto.Rating,
                     CreatedAt = DateTime.UtcNow,
                 };
 
                 _db.Comments.Add(comment);
                 await _db.SaveChangesAsync();
+                await recalculateRating(comment.ProductId);
             }
             catch (Exception ex)
             {
@@ -94,6 +118,7 @@ namespace TechShop_API.Controllers
 
             _db.Comments.Remove(comment);
             await _db.SaveChangesAsync();
+            await recalculateRating(comment.ProductId);
 
             return Ok();
         }
