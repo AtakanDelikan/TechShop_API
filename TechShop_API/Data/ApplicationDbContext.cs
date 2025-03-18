@@ -28,14 +28,21 @@ namespace TechShop_API.Data
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(builder);
-
             foreach (var foreignKey in builder.Model.GetEntityTypes()
                 .SelectMany(e => e.GetForeignKeys()))
             {
                 foreignKey.DeleteBehavior = DeleteBehavior.Restrict;
             }
 
+            builder.Entity<Product>()
+            .Property(p => p.Price)
+            .HasColumnType("DECIMAL(18, 2)");
+
+            builder.Entity<Category>()
+            .HasIndex(c => c.Name)
+            .IsUnique();
+
+            base.OnModelCreating(builder);
         }
     }
 }
