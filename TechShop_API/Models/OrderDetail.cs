@@ -18,6 +18,6 @@ namespace TechShop_API.Models
         [Required]
         public string ItemName { get; set; }
         [Required]
-        public double Price { get; set; }
+        public decimal Price { get; set; }
     }
 }

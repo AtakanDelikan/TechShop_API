@@ -12,7 +12,7 @@ namespace TechShop_API.Models.Dto
         public string PickupEmail { get; set; }
 
         public string ApplicationUserId { get; set; }
-        public double OrderTotal { get; set; }
+        public decimal OrderTotal { get; set; }
 
 
         public string StripePaymentIntentID { get; set; }

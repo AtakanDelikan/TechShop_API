@@ -8,6 +8,8 @@ using CsvHelper;
 using System.Globalization;
 using CsvHelper.Configuration;
 using TechShop_API.Utility;
+using Microsoft.AspNetCore.Identity;
+using System.Net;
 
 namespace TechShop_API.Controllers
 {
@@ -17,10 +19,15 @@ namespace TechShop_API.Controllers
     {
         private readonly ApplicationDbContext _db;
         private ApiResponse _response;
-        public BulkImportController(ApplicationDbContext db)
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        public BulkImportController(ApplicationDbContext db,
+            UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _db = db;
             _response = new ApiResponse();
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         [HttpPost("importCategories")]
@@ -249,6 +256,193 @@ namespace TechShop_API.Controllers
                 }
 
                 await _db.SaveChangesAsync();
+            }
+
+            return _response;
+        }
+
+        [HttpPost("createHunderedUsers")]
+        public async Task<ActionResult<ApiResponse>> createHunderedUsers()
+        {
+            const string password = "12345";
+            try
+            {
+
+                for (int i = 0; i < 99; i++)
+                {
+                    string userName = $"user{i + 1}";
+
+                    ApplicationUser newUser = new()
+                    {
+                        UserName = userName,
+                        Email = userName,
+                        NormalizedEmail = userName.ToUpper(),
+                        Name = userName,
+                    };
+
+                    var result = await _userManager.CreateAsync(newUser, password);
+                    if (result.Succeeded)
+                    {
+                        if (!_roleManager.RoleExistsAsync(SD.Role_Admin).GetAwaiter().GetResult())
+                        {
+                            await _roleManager.CreateAsync(new IdentityRole(SD.Role_Admin));
+                            await _roleManager.CreateAsync(new IdentityRole(SD.Role_Customer));
+                        }
+                        await _userManager.AddToRoleAsync(newUser, SD.Role_Customer);
+                    }
+                }
+
+
+                ApplicationUser adminUser = new()
+                {
+                    UserName = "admin",
+                    Email = "admin",
+                    NormalizedEmail = "admin".ToUpper(),
+                    Name = "admin",
+                };
+                var resultAdmin = await _userManager.CreateAsync(adminUser, password);
+                if (resultAdmin.Succeeded)
+                {
+                    await _userManager.AddToRoleAsync(adminUser, SD.Role_Admin);
+                }
+
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                return Ok(_response);
+                
+            }
+            catch (Exception ex)
+            {
+
+            }
+            _response.StatusCode = HttpStatusCode.BadRequest;
+            _response.IsSuccess = false;
+            _response.ErrorMessages.Add("Error while registering");
+            return BadRequest(_response);
+        }
+
+        static int GetWeightedRandom(Dictionary<int, int> items)
+        {
+            int totalWeight = items.Values.Sum();
+            int randomValue = new Random().Next(1, totalWeight + 1); // Random value between 1 and total weight
+
+            int cumulative = 0;
+            foreach (var item in items)
+            {
+                cumulative += item.Value;
+                if (randomValue <= cumulative)
+                {
+                    return item.Key; // Select this number
+                }
+            }
+
+            return -1; // Should never happen
+        }
+
+        static int[] GetUniqueRandomNumbers(int n, int x)
+        {
+            // Gets n unique random numbers from 0-x
+            if (n > x + 1) throw new ArgumentException("n cannot be larger than x+1");
+
+            int[] numbers = new int[x + 1];
+            for (int i = 0; i <= x; i++) numbers[i] = i; // Fill array with 0 to x
+
+            Random random = new Random();
+            for (int i = numbers.Length - 1; i > 0; i--)
+            {
+                int j = random.Next(0, i + 1);
+                (numbers[i], numbers[j]) = (numbers[j], numbers[i]); // Swap
+            }
+
+            return numbers[..n]; // Return first 'n' elements
+        }
+
+        static DateTime GetRandomDate2024()
+        {
+            Random random = new Random();
+            DateTime start = new DateTime(2024, 1, 1);
+            DateTime end = new DateTime(2024, 12, 31, 23, 59, 59);
+
+            int range = (int)(end - start).TotalSeconds; // Total seconds in 2024
+            int randomSeconds = random.Next(0, range);   // Pick random second
+            return start.AddSeconds(randomSeconds);      // Add to start date
+        }
+
+        private async Task createRandomOrder()
+        {
+            int userCount = await _db.ApplicationUsers.CountAsync();
+            if (userCount == 0) return; // No users in DB
+
+
+            int randomUserIndex = new Random().Next(0, userCount - 1);
+            var randomUser = await _db.ApplicationUsers.Skip(randomUserIndex).FirstOrDefaultAsync();
+
+            Dictionary<int, int> uniqueProductWeights = new Dictionary<int, int>
+            {
+                { 1, 78 }, { 2, 87 }, { 3, 94 }, { 4, 98 }, { 5, 100 },
+                { 6, 98 }, { 7, 94 }, { 8, 87 }, { 9, 78 }, { 10, 69 },
+                { 11, 58 }, { 12, 48 }, { 13, 39 }
+            };
+            int uniqueProductCount = GetWeightedRandom(uniqueProductWeights);
+            int productCount = await _db.Products.CountAsync();
+            if (productCount < uniqueProductCount) return; // Not enough products in DB
+
+            OrderHeader order = new()
+            {
+                ApplicationUserId = randomUser.Id,
+                PickupEmail = randomUser.Email,
+                PickupName = randomUser.Name,
+                PickupPhoneNumber = "",
+                OrderTotal = 0, // Updated at the end
+                OrderDate = GetRandomDate2024(), // A random time in 2024
+                StripePaymentIntentID = "",
+                TotalItems = 0, // Updated at the end
+                Status = SD.status_delivered
+            };
+
+            _db.OrderHeaders.Add(order);
+            _db.SaveChanges();
+
+            Dictionary<int, int> productCountWeights = new Dictionary<int, int>
+            {
+                { 1, 80 }, { 2, 45 }, { 3, 10 }, { 4, 5 }, { 5, 2 },{ 6, 1 }
+            };
+
+            int[] uniqueRandomProducts = GetUniqueRandomNumbers(uniqueProductCount, productCount);
+
+            int totalItems = 0;
+            decimal OrdersTotal = 0;
+            foreach (int productIndex in uniqueRandomProducts)
+            {
+                var randomProduct = await _db.Products.Skip(productIndex).FirstOrDefaultAsync();
+                int randomProductQuantity = GetWeightedRandom(productCountWeights);
+
+                OrderDetail orderDetail = new()
+                {
+                    OrderHeaderId = order.OrderHeaderId,
+                    ItemName = randomProduct.Name,
+                    ProductId = randomProduct.Id,
+                    Price = randomProduct.Price,
+                    Quantity = randomProductQuantity,
+                };
+                totalItems += randomProductQuantity;
+                OrdersTotal += randomProduct.Price * randomProductQuantity;
+                _db.OrderDetails.Add(orderDetail);
+            }
+
+            order.TotalItems = totalItems;
+            order.OrderTotal = OrdersTotal;
+            _db.OrderHeaders.Update(order);
+
+            _db.SaveChanges();
+        }
+
+        [HttpPost("createRandomOrders")]
+        public async Task<ActionResult<ApiResponse>> createRandomOrders(int randomOrderCount = 1)
+        {
+            for (int i = 0; i < randomOrderCount; i++)
+            {
+                await createRandomOrder();
             }
 
             return _response;

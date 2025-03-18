@@ -17,7 +17,7 @@ namespace TechShop_API.Models
         public string ApplicationUserId { get; set; }
         [ForeignKey("ApplicationUserId")]
         public ApplicationUser User { get; set; }
-        public double OrderTotal { get; set; }
+        public decimal OrderTotal { get; set; }
 
         
         public DateTime OrderDate { get; set; }

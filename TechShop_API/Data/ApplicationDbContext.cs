@@ -38,6 +38,14 @@ namespace TechShop_API.Data
             .Property(p => p.Price)
             .HasColumnType("DECIMAL(18, 2)");
 
+            builder.Entity<OrderDetail>()
+            .Property(od => od.Price)
+            .HasColumnType("DECIMAL(18, 2)");
+
+            builder.Entity<OrderHeader>()
+            .Property(oh => oh.OrderTotal)
+            .HasColumnType("DECIMAL(18, 2)");
+
             builder.Entity<Category>()
             .HasIndex(c => c.Name)
             .IsUnique();
