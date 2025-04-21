@@ -69,6 +69,12 @@ namespace TechShop_API.Controllers
                                 c.Description.Contains(searchTerm))
                     .OrderBy(c => c.Name)
                     .Take(count)
+                    .Select(category => new
+                    {
+                        category.Id,
+                        category.Name,
+                        category.Description
+                    })
                     .ToListAsync();
                 _response.Result = categories;
                 _response.StatusCode = HttpStatusCode.OK;
