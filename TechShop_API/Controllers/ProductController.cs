@@ -351,7 +351,54 @@ namespace TechShop_API.Controllers
             return _response;
         }
 
-        //TODO HttpPut API that updates category
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> UpdateProduct(int id, [FromForm] ProductUpdateDTO ProductUpdateDTO)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (ProductUpdateDTO == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    Product productFromDb = await _db.Products.FindAsync(id);
+                    if (productFromDb == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    productFromDb.Name = ProductUpdateDTO.Name;
+                    productFromDb.Description = ProductUpdateDTO.Description;
+                    productFromDb.CategoryId = ProductUpdateDTO.CategoryId;
+                    productFromDb.Price = ProductUpdateDTO.Price;
+                    productFromDb.Stock = ProductUpdateDTO.Stock;
+
+
+                    _db.Products.Update(productFromDb);
+                    _db.SaveChanges();
+                    _response.StatusCode = HttpStatusCode.NoContent;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
+        }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteProduct(int id)

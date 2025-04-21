@@ -32,8 +32,6 @@ namespace TechShop_API.Controllers
             return Ok(_response);
         }
 
-        //TODO HttpGet API that returns the tree given a node id
-
         [HttpGet("{id:int}", Name = "GetCategory")]
         public async Task<IActionResult> GetCategory(int id)
         {
@@ -138,7 +136,52 @@ namespace TechShop_API.Controllers
             return _response;
         }
 
-        //TODO HttpPut API that updates category
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> UpdateCategory(int id, [FromForm] CategoryUpdateDTO CategoryUpdateDTO)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (CategoryUpdateDTO == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    Category categoryFromDb = await _db.Categories.FindAsync(id);
+                    if (categoryFromDb == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+
+                    categoryFromDb.Name = CategoryUpdateDTO.Name;
+                    categoryFromDb.Description = CategoryUpdateDTO.Description;
+                    categoryFromDb.ParentCategoryId = CategoryUpdateDTO.ParentCategoryId;
+
+                    _db.Categories.Update(categoryFromDb);
+                    _db.SaveChanges();
+                    _response.StatusCode = HttpStatusCode.NoContent;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
+        }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteCategory(int id)

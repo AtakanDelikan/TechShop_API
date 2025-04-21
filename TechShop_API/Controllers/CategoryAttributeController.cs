@@ -2,11 +2,15 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
+using System;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
 using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
+using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
 {
@@ -74,7 +78,10 @@ namespace TechShop_API.Controllers
                     {
                         throw new ArgumentException("Category doesn't exist");
                     }
-                    // TODO DataType must be valid, check SD.cs datatypes
+                    if(!Enum.IsDefined(typeof(SD.DataTypeEnum), categoryAttributeCreateDTO.DataType))
+                    {
+                        throw new ArgumentException("Data type doesn't exist");
+                    }
                     CategoryAttribute CategoryAttributeToCreate = new()
                     {
                         CategoryId = categoryAttributeCreateDTO.CategoryId,
@@ -104,6 +111,61 @@ namespace TechShop_API.Controllers
         }
 
         //TODO HttpPut API that updates categoryattribute
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> UpdateCategoryAttribute(int id, [FromForm] CategoryAttributeUpdateDTO CategoryAttributeUpdateDTO)
+        {
+            try
+            {
+                if (!Enum.IsDefined(typeof(SD.DataTypeEnum), CategoryAttributeUpdateDTO.DataType))
+                {
+                    throw new ArgumentException("Data type doesn't exist");
+                }
+                if (ModelState.IsValid)
+                {
+                    if (CategoryAttributeUpdateDTO == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    CategoryAttribute categoryAttributeFromDb = await _db.CategoryAttributes.FindAsync(id);
+                    if (categoryAttributeFromDb == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    categoryAttributeFromDb.AttributeName = CategoryAttributeUpdateDTO.AttributeName;
+
+                    // if datatype is updated products will lose that attribute field
+                    if (categoryAttributeFromDb.DataType != CategoryAttributeUpdateDTO.DataType)
+                    {
+                        var attributesToDelete = _db.ProductAttributes.Where(pa => pa.CategoryAttributeId == categoryAttributeFromDb.Id);
+                        _db.ProductAttributes.RemoveRange(attributesToDelete);
+                        categoryAttributeFromDb.DataType = CategoryAttributeUpdateDTO.DataType;
+                    }
+
+                    _db.CategoryAttributes.Update(categoryAttributeFromDb);
+                    _db.SaveChanges();
+                    _response.StatusCode = HttpStatusCode.NoContent;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
+        }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteCategoryAttribute(int id)

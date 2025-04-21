@@ -60,89 +60,10 @@ namespace TechShop_API.Controllers
                         CategoryAttributeId = categoryAttributeId,
                     };
 
-                    // check data type
-                    var dataType = categoryAttribute.DataType;
-
                     string value = productAttributeCreateDTO.Value;
-                    switch (dataType)
-                    {
-                        case SD.DataTypeEnum.String:
-                            {
-                                ProductAttributeToCreate.String = value;
-                                if (!categoryAttribute.UniqueValues.Contains(value))
-                                {
-                                    categoryAttribute.UniqueValues.Add(value);
-                                    _db.CategoryAttributes.Update(categoryAttribute);
-                                }
-                                break;
-                            }
-                        case SD.DataTypeEnum.Integer:
-                            {
-                                if (int.TryParse(value, out int result))
-                                {
-                                    ProductAttributeToCreate.Integer = result;
-                                    if (!categoryAttribute.Min.HasValue)
-                                    {
-                                        categoryAttribute.Min = result;
-                                        categoryAttribute.Max = result;
-                                    }
-                                    if (categoryAttribute.Min > result)
-                                    {
-                                        categoryAttribute.Min = result;
-                                    }
-                                    if (categoryAttribute.Max < result)
-                                    {
-                                        categoryAttribute.Max = result;
-                                    }
-                                    _db.CategoryAttributes.Update(categoryAttribute);
-                                }
-                                else
-                                {
-                                    throw new ArgumentException("Value cannot be converted to integer");
-                                }
-                                break;
-                            }
-                        case SD.DataTypeEnum.Decimal:
-                            {
-                                if (double.TryParse(value, out double result))
-                                {
-                                    ProductAttributeToCreate.Decimal = result;
-                                    if (!categoryAttribute.Min.HasValue)
-                                    {
-                                        categoryAttribute.Min = result;
-                                        categoryAttribute.Max = result;
-                                    }
-                                    if (categoryAttribute.Min > result)
-                                    {
-                                        categoryAttribute.Min = result;
-                                    }
-                                    if (categoryAttribute.Max < result)
-                                    {
-                                        categoryAttribute.Max = result;
-                                    }
-                                    _db.CategoryAttributes.Update(categoryAttribute);
-                                }
-                                else
-                                {
-                                    throw new ArgumentException("Value cannot be converted to decimal");
-                                }
-                                break;
-                            }
-                        case SD.DataTypeEnum.Boolean:
-                            {
-                                if (productAttributeCreateDTO.Value == "true") {
-                                    ProductAttributeToCreate.Boolean = true;
-                                }
-                                else if (productAttributeCreateDTO.Value == "false") {
-                                    ProductAttributeToCreate.Boolean = false;
-                                }
-                                else {
-                                    ProductAttributeToCreate.Boolean = null;
-                                }
-                                break;
-                            }
-                        default: break;
-                    }
+
+                    UpsertProductAttribute(ProductAttributeToCreate, categoryAttribute, value);
+
 
                     _db.ProductAttributes.Add(ProductAttributeToCreate);
                     _db.SaveChanges();
@@ -165,7 +86,141 @@ namespace TechShop_API.Controllers
             return _response;
         }
 
-        //TODO HttpPut API that updates productattribute
+        private void UpsertProductAttribute(ProductAttribute productAttribute, CategoryAttribute categoryAttribute, string value)
+        {
+            var dataType = categoryAttribute.DataType;
+
+            switch (dataType)
+            {
+                case SD.DataTypeEnum.String:
+                    {
+                        productAttribute.String = value;
+                        if (!categoryAttribute.UniqueValues.Contains(value))
+                        {
+                            categoryAttribute.UniqueValues.Add(value);
+                            _db.CategoryAttributes.Update(categoryAttribute);
+                        }
+                        break;
+                    }
+                case SD.DataTypeEnum.Integer:
+                    {
+                        if (int.TryParse(value, out int result))
+                        {
+                            productAttribute.Integer = result;
+                            if (!categoryAttribute.Min.HasValue)
+                            {
+                                categoryAttribute.Min = result;
+                                categoryAttribute.Max = result;
+                            }
+                            if (categoryAttribute.Min > result)
+                            {
+                                categoryAttribute.Min = result;
+                            }
+                            if (categoryAttribute.Max < result)
+                            {
+                                categoryAttribute.Max = result;
+                            }
+                            _db.CategoryAttributes.Update(categoryAttribute);
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Value cannot be converted to integer");
+                        }
+                        break;
+                    }
+                case SD.DataTypeEnum.Decimal:
+                    {
+                        if (double.TryParse(value, out double result))
+                        {
+                            productAttribute.Decimal = result;
+                            if (!categoryAttribute.Min.HasValue)
+                            {
+                                categoryAttribute.Min = result;
+                                categoryAttribute.Max = result;
+                            }
+                            if (categoryAttribute.Min > result)
+                            {
+                                categoryAttribute.Min = result;
+                            }
+                            if (categoryAttribute.Max < result)
+                            {
+                                categoryAttribute.Max = result;
+                            }
+                            _db.CategoryAttributes.Update(categoryAttribute);
+                        }
+                        else
+                        {
+                            throw new ArgumentException("Value cannot be converted to decimal");
+                        }
+                        break;
+                    }
+                case SD.DataTypeEnum.Boolean:
+                    {
+                        if (value == "true")
+                        {
+                            productAttribute.Boolean = true;
+                        }
+                        else if (value == "false")
+                        {
+                            productAttribute.Boolean = false;
+                        }
+                        else
+                        {
+                            productAttribute.Boolean = null;
+                        }
+                        break;
+                    }
+                default: break;
+            }
+            return;
+        }
+
+        //TODO HttpPut and delete should modify categoryAttribute min/max or unique strings
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<ApiResponse>> UpdateProductAttribute(int id, [FromForm] ProductAttributeUpdateDTO ProductAttributeUpdateDTO)
+        {
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    if (ProductAttributeUpdateDTO == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    ProductAttribute productAttributeFromDb = await _db.ProductAttributes.FindAsync(id);
+                    if (productAttributeFromDb == null)
+                    {
+                        _response.StatusCode = HttpStatusCode.BadRequest;
+                        _response.IsSuccess = false;
+                        return BadRequest();
+                    }
+
+                    var categoryAttribute = _db.CategoryAttributes.FirstOrDefault(u => u.Id == productAttributeFromDb.CategoryAttributeId);
+                    string value = ProductAttributeUpdateDTO.Value;
+                    UpsertProductAttribute(productAttributeFromDb, categoryAttribute, value);
+
+                    _db.ProductAttributes.Update(productAttributeFromDb);
+                    _db.SaveChanges();
+                    _response.StatusCode = HttpStatusCode.NoContent;
+                    return Ok(_response);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+
+            return _response;
+        }
 
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteProductAttribute(int id)
