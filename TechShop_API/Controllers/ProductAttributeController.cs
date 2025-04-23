@@ -176,8 +176,8 @@ namespace TechShop_API.Controllers
         }
 
         //TODO HttpPut and delete should modify categoryAttribute min/max or unique strings
-        [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApiResponse>> UpdateProductAttribute(int id, [FromForm] ProductAttributeUpdateDTO ProductAttributeUpdateDTO)
+        [HttpPut]
+        public async Task<ActionResult<ApiResponse>> UpdateProductAttribute([FromBody] ProductAttributeUpdateDTO ProductAttributeUpdateDTO)
         {
             try
             {
@@ -190,19 +190,29 @@ namespace TechShop_API.Controllers
                         return BadRequest();
                     }
 
-                    ProductAttribute productAttributeFromDb = await _db.ProductAttributes.FindAsync(id);
-                    if (productAttributeFromDb == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.BadRequest;
-                        _response.IsSuccess = false;
-                        return BadRequest();
-                    }
+                    ProductAttribute productAttributeFromDb = _db.ProductAttributes
+                        .Where(pa => pa.CategoryAttributeId == ProductAttributeUpdateDTO.CategoryAttributeId
+                                && pa.ProductId == ProductAttributeUpdateDTO.ProductId).FirstOrDefault();
 
                     var categoryAttribute = _db.CategoryAttributes.FirstOrDefault(u => u.Id == productAttributeFromDb.CategoryAttributeId);
                     string value = ProductAttributeUpdateDTO.Value;
-                    UpsertProductAttribute(productAttributeFromDb, categoryAttribute, value);
 
-                    _db.ProductAttributes.Update(productAttributeFromDb);
+                    if (productAttributeFromDb == null)
+                    {
+                        ProductAttribute ProductAttributeToCreate = new()
+                        {
+                            ProductId = ProductAttributeUpdateDTO.ProductId,
+                            CategoryAttributeId = ProductAttributeUpdateDTO.CategoryAttributeId,
+                        };
+
+                        UpsertProductAttribute(ProductAttributeToCreate, categoryAttribute, value);
+                    }
+                    else {
+                        UpsertProductAttribute(productAttributeFromDb, categoryAttribute, value);
+                        _db.ProductAttributes.Update(productAttributeFromDb);
+                    }
+
+
                     _db.SaveChanges();
                     _response.StatusCode = HttpStatusCode.NoContent;
                     return Ok(_response);

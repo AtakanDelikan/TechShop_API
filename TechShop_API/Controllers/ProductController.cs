@@ -64,13 +64,15 @@ namespace TechShop_API.Controllers
 
             var productAttributes = dbProductAttributes.Select(pa => new ProductAttributeDTO
             {
+                Id = pa.Id,
+                CategoryAttributeId = pa.CategoryAttributeId,
                 Name = pa.CategoryAttribute.AttributeName,
                 Value = pa.CategoryAttribute.DataType switch
                 {
                     SD.DataTypeEnum.String => pa.String,
                     SD.DataTypeEnum.Integer => pa.Integer?.ToString(),
                     SD.DataTypeEnum.Decimal => pa.Decimal?.ToString("F2"),
-                    SD.DataTypeEnum.Boolean => pa.Boolean?.ToString(),
+                    SD.DataTypeEnum.Boolean => pa.Boolean?.ToString().ToLower(),
                     _ => null // Handle unexpected enum values
                 }
             }).ToList();
@@ -352,7 +354,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApiResponse>> UpdateProduct(int id, [FromForm] ProductUpdateDTO ProductUpdateDTO)
+        public async Task<ActionResult<ApiResponse>> UpdateProduct(int id, [FromBody] ProductUpdateDTO ProductUpdateDTO)
         {
             try
             {
