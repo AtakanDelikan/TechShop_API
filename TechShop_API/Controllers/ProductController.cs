@@ -90,7 +90,7 @@ namespace TechShop_API.Controllers
 
         // Get products by category ID
         [HttpGet("category/{categoryId}")]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId)
+        public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId, int pageNumber = 1, int pageSize = 10)
         {
             IQueryable<Product> productsQuery = _db.Products;//.Include(p => p.ProductImages);
 
@@ -101,6 +101,8 @@ namespace TechShop_API.Controllers
             }
 
             var products = await productsQuery
+                .Skip(pageSize * (pageNumber - 1))
+                .Take(pageSize)
                 .Select(product => new
                 {
                     product.Id,
@@ -113,7 +115,16 @@ namespace TechShop_API.Controllers
                     Images = product.ProductImages.Select(image => image.Url).ToList()
                 })
                 .ToListAsync();
-            _response.Result = products;
+            
+            int totalProducts = await productsQuery.CountAsync(); // Total matching products
+            int totalPages = (int)Math.Ceiling((double)totalProducts / pageSize); // Calculate pages
+            _response.Result = new
+            {
+                Products = products,
+                TotalItems = totalProducts,
+                TotalPages = totalPages,
+                CurrentPage = pageNumber
+            };
             _response.StatusCode = System.Net.HttpStatusCode.OK;
             return Ok(_response);
         }
@@ -290,6 +301,7 @@ namespace TechShop_API.Controllers
                     .OrderBy(p => p.Name)
                     .Skip(pageSize * (pageNumber - 1))
                     .Take(pageSize)
+                    .Include(p => p.ProductImages)
                     .ToListAsync();
                 _response.Result = new
                 {
