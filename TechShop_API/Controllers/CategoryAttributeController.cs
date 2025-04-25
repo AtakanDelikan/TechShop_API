@@ -112,14 +112,10 @@ namespace TechShop_API.Controllers
 
         //TODO HttpPut API that updates categoryattribute
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApiResponse>> UpdateCategoryAttribute(int id, [FromForm] CategoryAttributeUpdateDTO CategoryAttributeUpdateDTO)
+        public async Task<ActionResult<ApiResponse>> UpdateCategoryAttribute(int id, [FromBody] CategoryAttributeUpdateDTO CategoryAttributeUpdateDTO)
         {
             try
             {
-                if (!Enum.IsDefined(typeof(SD.DataTypeEnum), CategoryAttributeUpdateDTO.DataType))
-                {
-                    throw new ArgumentException("Data type doesn't exist");
-                }
                 if (ModelState.IsValid)
                 {
                     if (CategoryAttributeUpdateDTO == null)
@@ -140,11 +136,11 @@ namespace TechShop_API.Controllers
                     categoryAttributeFromDb.AttributeName = CategoryAttributeUpdateDTO.AttributeName;
 
                     // if datatype is updated products will lose that attribute field
-                    if (categoryAttributeFromDb.DataType != CategoryAttributeUpdateDTO.DataType)
+                    if (CategoryAttributeUpdateDTO.DataType != null && categoryAttributeFromDb.DataType != CategoryAttributeUpdateDTO.DataType)
                     {
                         var attributesToDelete = _db.ProductAttributes.Where(pa => pa.CategoryAttributeId == categoryAttributeFromDb.Id);
                         _db.ProductAttributes.RemoveRange(attributesToDelete);
-                        categoryAttributeFromDb.DataType = CategoryAttributeUpdateDTO.DataType;
+                        categoryAttributeFromDb.DataType = CategoryAttributeUpdateDTO.DataType.Value;
                     }
 
                     _db.CategoryAttributes.Update(categoryAttributeFromDb);

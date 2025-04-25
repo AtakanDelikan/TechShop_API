@@ -42,7 +42,14 @@ namespace TechShop_API.Controllers
                 return BadRequest(_response);
             }
             Category category = _db.Categories
-                .Include(c => c.ParentCategory)
+                .Select(category => new Category
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Description = category.Description,
+                    ParentCategoryId = category.ParentCategoryId,
+                    ParentCategory = new Category { Name = category.ParentCategory.Name }, // Only select the name
+                })
                 .FirstOrDefault(u => u.Id == id);
             if (category == null)
             {
@@ -51,8 +58,6 @@ namespace TechShop_API.Controllers
                 return NotFound(_response);
             }
             _response.Result = category;
-            //_response.Result = null;
-            //_response.Result = category.ParentCategory;
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }
@@ -137,7 +142,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<ApiResponse>> UpdateCategory(int id, [FromForm] CategoryUpdateDTO CategoryUpdateDTO)
+        public async Task<ActionResult<ApiResponse>> UpdateCategory(int id, [FromBody] CategoryUpdateDTO CategoryUpdateDTO)
         {
             try
             {
@@ -161,7 +166,8 @@ namespace TechShop_API.Controllers
 
                     categoryFromDb.Name = CategoryUpdateDTO.Name;
                     categoryFromDb.Description = CategoryUpdateDTO.Description;
-                    categoryFromDb.ParentCategoryId = CategoryUpdateDTO.ParentCategoryId;
+                    Category parentCategoryFromDb = await _db.Categories.FindAsync(CategoryUpdateDTO.ParentCategoryId);
+                    categoryFromDb.ParentCategoryId = parentCategoryFromDb?.Id;
 
                     _db.Categories.Update(categoryFromDb);
                     _db.SaveChanges();

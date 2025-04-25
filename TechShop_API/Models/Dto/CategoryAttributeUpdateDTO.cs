@@ -7,6 +7,6 @@ namespace TechShop_API.Models.Dto
     public class CategoryAttributeUpdateDTO
     {
         public string AttributeName { get; set; }
-        public SD.DataTypeEnum DataType { get; set; }
+        public SD.DataTypeEnum? DataType { get; set; }
     }
 }
