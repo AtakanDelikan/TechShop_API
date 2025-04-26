@@ -10,6 +10,7 @@ using CsvHelper.Configuration;
 using TechShop_API.Utility;
 using Microsoft.AspNetCore.Identity;
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TechShop_API.Controllers
 {
@@ -31,6 +32,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost("importCategories")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> ImportCategories(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -75,6 +77,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost("importCategoryAttributes")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> ImportCategoryAttributes(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -131,6 +134,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost("importProducts")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> ImportProducts(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -262,6 +266,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost("createHunderedUsers")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> createHunderedUsers()
         {
             const string password = "12345";
@@ -438,6 +443,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost("createRandomOrders")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> createRandomOrders(int randomOrderCount = 1)
         {
             for (int i = 0; i < randomOrderCount; i++)

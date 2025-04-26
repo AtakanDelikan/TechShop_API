@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +68,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> CreateCategoryAttribute([FromBody] CategoryAttributeCreateDTO categoryAttributeCreateDTO)
         {
             try
@@ -110,8 +112,8 @@ namespace TechShop_API.Controllers
             return _response;
         }
 
-        //TODO HttpPut API that updates categoryattribute
         [HttpPut("{id:int}")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> UpdateCategoryAttribute(int id, [FromBody] CategoryAttributeUpdateDTO CategoryAttributeUpdateDTO)
         {
             try
@@ -164,6 +166,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> DeleteCategoryAttribute(int id)
         {
             try

@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TechShop_API.Data;
 using TechShop_API.Models;
+using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
 {
@@ -17,6 +19,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> SalesAnalytics()
         {
             var rng = new Random();

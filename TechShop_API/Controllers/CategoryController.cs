@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
 using TechShop_API.Services;
+using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
 {
@@ -93,6 +95,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> CreateCategory([FromBody] CategoryCreateDTO categoryCreateDTO)
         {
             try
@@ -142,6 +145,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpPut("{id:int}")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> UpdateCategory(int id, [FromBody] CategoryUpdateDTO CategoryUpdateDTO)
         {
             try
@@ -190,6 +194,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> DeleteCategory(int id)
         {
             try

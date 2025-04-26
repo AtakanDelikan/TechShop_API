@@ -1,4 +1,5 @@
 ﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.JsonPatch.Operations;
@@ -35,6 +36,7 @@ namespace TechShop_API.Controllers
 
 
         [HttpPost]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> CreateProductAttribute([FromBody] ProductAttributeCreateDTO productAttributeCreateDTO)
         {
             try
@@ -177,6 +179,7 @@ namespace TechShop_API.Controllers
 
         //TODO HttpPut and delete should modify categoryAttribute min/max or unique strings
         [HttpPut]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> UpdateProductAttribute([FromBody] ProductAttributeUpdateDTO ProductAttributeUpdateDTO)
         {
             try
@@ -233,6 +236,7 @@ namespace TechShop_API.Controllers
         }
 
         [HttpDelete("{id:int}")]
+        [Authorize(Roles = SD.Role_Admin)]
         public async Task<ActionResult<ApiResponse>> DeleteProductAttribute(int id)
         {
             try
