@@ -22,21 +22,58 @@ namespace TechShop_API.Controllers
         }
 
         [HttpGet]
+        public async Task<ActionResult<ApiResponse>> GetAllOrders(int pageNumber = 1, int pageSize = 20, string status = "")
+        {
+            try
+            {
+                IQueryable<OrderHeader> orderQuery = _db.OrderHeaders;
+
+                if (!string.IsNullOrEmpty(status))
+                {
+                    // Only filter by status if status is given
+                    orderQuery = orderQuery.Where(u => u.Status == status);
+                }
+
+                var orderHeaders = orderQuery
+                    .OrderByDescending(u => u.OrderDate)
+                    .Skip(pageSize * (pageNumber - 1))
+                    .Take(pageSize)
+                    .Include(u => u.OrderDetails)
+                    .ThenInclude(u => u.Product);
+
+                int totalOrders = await orderQuery.CountAsync(); // Total matching orders
+                int totalPages = (int)Math.Ceiling((double)totalOrders / pageSize); // Calculate pages
+                _response.Result = new
+                {
+                    OrderHeaders = orderHeaders,
+                    TotalOrders = totalOrders,
+                    TotalPages = totalPages,
+                    CurrentPage = pageNumber
+                };
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages
+                    = new List<string>() { ex.ToString() };
+            }
+            return _response;
+        }
+
+        [HttpGet("byUser")]
         public async Task<ActionResult<ApiResponse>> GetOrders(string? userId)
         {
             try
             {
-                var orderHeaders = _db.OrderHeaders.Include(u => u.OrderDetails)
-                    .ThenInclude(u => u.Product)
-                    .OrderByDescending(u => u.OrderHeaderId);
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    _response.Result = orderHeaders.Where(u => u.ApplicationUserId == userId);
-                }
-                else
-                {
-                    _response.Result = orderHeaders;
-                }
+                var orderHeaders = _db.OrderHeaders
+                    .Where(u => u.ApplicationUserId == userId)
+                    .OrderByDescending(u => u.OrderDate)
+                    .Include(u => u.OrderDetails)
+                    .ThenInclude(u => u.Product);
+
+                _response.Result = orderHeaders;
                 _response.StatusCode = HttpStatusCode.OK;
                 return Ok(_response);
             }
