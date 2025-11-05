@@ -6,6 +6,7 @@ using System.Net;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
 using TechShop_API.Services;
+using TechShop_API.Services.Interfaces;
 
 namespace TechShop_API.Controllers
 {
@@ -13,10 +14,10 @@ namespace TechShop_API.Controllers
     [ApiController]
     public class CommentController : ControllerBase
     {
-        private readonly CommentService _commentService;
+        private readonly ICommentService _commentService;
         private readonly ApiResponse _response = new();
 
-        public CommentController(CommentService commentService)
+        public CommentController(ICommentService commentService)
         {
             _commentService = commentService;
         }
@@ -37,6 +38,8 @@ namespace TechShop_API.Controllers
             {
                 await _commentService.CreateCommentAsync(dto, User);
                 _response.StatusCode = HttpStatusCode.Created;
+                // Wrap the response in a 201 Created ObjectResult
+                return Created("", _response);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -44,8 +47,6 @@ namespace TechShop_API.Controllers
                 _response.ErrorMessages = new List<string> { ex.Message };
                 return Unauthorized(_response);
             }
-
-            return _response;
         }
 
         [HttpDelete("{id:int}")]

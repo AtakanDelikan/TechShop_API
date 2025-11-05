@@ -4,10 +4,11 @@ using System.Security.Claims;
 using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
+using TechShop_API.Services.Interfaces;
 
 namespace TechShop_API.Services
 {
-    public class CommentService
+    public class CommentService : ICommentService
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
