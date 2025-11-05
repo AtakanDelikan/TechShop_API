@@ -1,16 +1,11 @@
 ﻿using Azure;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 using System.Net;
-using System.Security.Claims;
-using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
-using TechShop_API.Utility;
+using TechShop_API.Services;
 
 namespace TechShop_API.Controllers
 {
@@ -18,110 +13,59 @@ namespace TechShop_API.Controllers
     [ApiController]
     public class CommentController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
-        private ApiResponse _response;
-        private readonly UserManager<ApplicationUser> _userManager;
-        public CommentController(ApplicationDbContext db, UserManager<ApplicationUser> userManager)
+        private readonly CommentService _commentService;
+        private readonly ApiResponse _response = new();
+
+        public CommentController(CommentService commentService)
         {
-            _db = db;
-            _response = new ApiResponse();
-            _userManager = userManager;
+            _commentService = commentService;
         }
 
         [HttpGet("{productId:int}")]
-        public async Task<IActionResult> GetCommentByProduct(int productId)
+        public async Task<IActionResult> GetCommentsByProduct(int productId)
         {
-            var comments = await _db.Comments
-                .Where(c => c.ProductId == productId)
-                .Include(c => c.User)
-                .OrderByDescending(c => c.CreatedAt)
-                .Select(c => new CommentDTO
-                {
-                    CommentId = c.Id,
-                    ProductId = c.ProductId,
-                    Content = c.Content,
-                    Rating = c.Rating, 
-                    UserName = c.User.Name,
-                    CreatedAt = c.CreatedAt
-                })
-                .ToListAsync();
-
-            _response.Result = comments;
+            _response.Result = await _commentService.GetCommentsByProductAsync(productId);
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
         }
 
-        private async Task recalculateRating(int productId)
-        {
-            Product product = _db.Products
-                .FirstOrDefault(u => u.Id == productId);
-
-            if (product == null)
-            {
-                return;
-            }
-
-            var ratingsQuery = _db.Comments
-                .Where(c => c.ProductId == productId)
-                .Select(c => c.Rating);
-
-            double averageRating = ratingsQuery.Any()
-                ? ratingsQuery.Average()
-                : 0;
-
-            product.Rating = averageRating;
-            _db.Products.Update(product);
-            await _db.SaveChangesAsync();
-        }
-
         [HttpPost]
         [Authorize]
-        public async Task<ActionResult<ApiResponse>> CreateComment([FromBody] CommentCreateDTO commentDto)
+        public async Task<ActionResult<ApiResponse>> CreateComment([FromBody] CommentCreateDTO dto)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _db.Users.FindAsync(userId);
-            if (user == null) return Unauthorized();
             try
             {
-                var comment = new Comment
-                {
-                    ProductId = commentDto.ProductId,
-                    ApplicationUserId = user.Id,
-                    Content = commentDto.Content,
-                    Rating = commentDto.Rating,
-                    CreatedAt = DateTime.UtcNow,
-                };
-
-                _db.Comments.Add(comment);
-                await _db.SaveChangesAsync();
-                await recalculateRating(comment.ProductId);
+                await _commentService.CreateCommentAsync(dto, User);
+                _response.StatusCode = HttpStatusCode.Created;
             }
-            catch (Exception ex)
+            catch (UnauthorizedAccessException ex)
             {
                 _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                _response.ErrorMessages = new List<string> { ex.Message };
+                return Unauthorized(_response);
             }
 
             return _response;
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         [Authorize]
         public async Task<IActionResult> DeleteComment(int id)
         {
-            var user = await _userManager.GetUserAsync(User);
-            var comment = await _db.Comments.FindAsync(id);
-
-            if (comment == null) return NotFound();
-            if (comment.ApplicationUserId != user.Id) return Forbid();
-
-            _db.Comments.Remove(comment);
-            await _db.SaveChangesAsync();
-            await recalculateRating(comment.ProductId);
-
-            return Ok();
+            try
+            {
+                await _commentService.DeleteCommentAsync(id, User);
+                _response.StatusCode = HttpStatusCode.NoContent;
+                return Ok(_response);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
         }
-
     }
 }
