@@ -1,9 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using TechShop_API.Data;
 using TechShop_API.Models;
+using TechShop_API.Services;
+using TechShop_API.Services.Interfaces;
 
 namespace TechShop_API.Controllers
 {
@@ -11,12 +10,12 @@ namespace TechShop_API.Controllers
     [ApiController]
     public class ShoppingCartController : ControllerBase
     {
-        protected ApiResponse _response;
-        private readonly ApplicationDbContext _db;
-        public ShoppingCartController(ApplicationDbContext db)
+        private readonly IShoppingCartService _cartService;
+        private readonly ApiResponse _response = new();
+
+        public ShoppingCartController(IShoppingCartService cartService)
         {
-            _response = new ApiResponse();
-            _db = db;
+            _cartService = cartService;
         }
 
         [HttpGet]
@@ -24,155 +23,50 @@ namespace TechShop_API.Controllers
         {
             try
             {
-                ShoppingCart shoppingCart;
-                if (string.IsNullOrEmpty(userId))
-                {
-                    shoppingCart = new();
-                }
-                else
-                {
-                    shoppingCart = _db.ShoppingCarts
-                        .Include(u => u.CartItems).ThenInclude(u => u.Product)
-                        .ThenInclude(p => p.ProductImages)
-                        .FirstOrDefault(u => u.UserId == userId);
-                }
-                if (shoppingCart == null) {
-                    _response.Result = new ShoppingCart();
-                } else if (shoppingCart.CartItems != null && shoppingCart.CartItems.Count > 0)
-                {
-                    shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity*u.Product.Price);
-                    _response.Result = shoppingCart;
-                }
-
+                _response.Result = await _cartService.GetShoppingCartAsync(userId);
                 _response.StatusCode = HttpStatusCode.OK;
-                return Ok(_response);
             }
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                _response.ErrorMessages = new List<string> { ex.ToString() };
                 _response.StatusCode = HttpStatusCode.BadRequest;
             }
-            return _response;
+            return Ok(_response);
         }
 
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> AddOrUpdateItemInCart(string userId, int productId, int updateQuantityBy)
         {
-            // 1 shopping cat per 1 user
-            // if updatequantityby is 0, item will be removed
-
-            // user adds a new item to a new shopping cart for the first time
-            // user adds a new item to an existing shopping cart
-            // user updates an existing item count
-            // user removes an existing item
-
-            ShoppingCart shoppingCart = _db.ShoppingCarts.Include(u => u.CartItems).FirstOrDefault(u => u.UserId == userId);
-            Product product = _db.Products.FirstOrDefault(u => u.Id == productId);
-            if (product == null)
+            try
             {
-                _response.StatusCode = HttpStatusCode.BadRequest;
+                await _cartService.AddOrUpdateItemAsync(userId, productId, updateQuantityBy);
+                _response.StatusCode = HttpStatusCode.OK;
+            }
+            catch (Exception ex)
+            {
                 _response.IsSuccess = false;
-                return BadRequest();
+                _response.ErrorMessages = new List<string> { ex.Message };
+                _response.StatusCode = HttpStatusCode.BadRequest;
             }
-            if (shoppingCart == null && updateQuantityBy > 0)
-            {
-                // create a shopping cart & add cart item
-                ShoppingCart newCart = new() { UserId = userId };
-                _db.ShoppingCarts.Add(newCart);
-                _db.SaveChanges();
-
-                CartItem newCartItem = new()
-                {
-                    ProductId = productId,
-                    Quantity = updateQuantityBy,
-                    ShoppingCartId = newCart.Id,
-                    Product = null,
-                };
-                _db.CartItems.Add(newCartItem);
-                _db.SaveChanges();
-            }
-            else
-            {
-                // shopping cart exist
-                CartItem cartItemInCart = shoppingCart.CartItems.FirstOrDefault(u => u.ProductId == productId);
-                if (cartItemInCart == null)
-                {
-                    // item does not exist in the current cart
-                    CartItem newCartItem = new()
-                    {
-                        ProductId = productId,
-                        Quantity = updateQuantityBy,
-                        ShoppingCartId = shoppingCart.Id,
-                        Product = null,
-                    };
-                    _db.CartItems.Add(newCartItem);
-                    _db.SaveChanges();
-                }
-                else
-                {
-                    // item already exists in the cart, so update quantity
-                    int newQuantity = cartItemInCart.Quantity + updateQuantityBy;
-                    if (updateQuantityBy == 0 || newQuantity <= 0)
-                    {
-                        // remove cart item from cart & if it was the only item, remove cart also
-                        _db.CartItems.Remove(cartItemInCart);
-                        if (shoppingCart.CartItems.Count() == 1)
-                        {
-                            _db.ShoppingCarts.Remove(shoppingCart);
-                        }
-                        _db.SaveChanges();
-                    }
-                    else
-                    {
-                        cartItemInCart.Quantity = newQuantity;
-                        _db.SaveChanges();
-                    }
-                }
-            }    
-
-            return _response;
+            return Ok(_response);
         }
+
         [HttpDelete("{id:int}")]
         public async Task<ActionResult<ApiResponse>> DeleteShoppingCart(int id)
         {
             try
             {
-                if (id == 0)
-                {
-                    _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccess = false;
-                    return BadRequest();
-                }
-
-                ShoppingCart shoppingCartFromDb = await _db.ShoppingCarts
-                    .Include(sc => sc.CartItems)
-                    .FirstOrDefaultAsync(sc => sc.Id == id);
-                if (shoppingCartFromDb == null)
-                {
-                    _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccess = false;
-                    return BadRequest();
-                }
-
-
-                ICollection<CartItem> CartItems = shoppingCartFromDb.CartItems;
-                _db.CartItems.RemoveRange(CartItems);
-
-                _db.ShoppingCarts.Remove(shoppingCartFromDb);
-                _db.SaveChanges();
+                await _cartService.DeleteShoppingCartAsync(id);
                 _response.StatusCode = HttpStatusCode.NoContent;
-                return Ok(_response);
             }
             catch (Exception ex)
             {
                 _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                _response.ErrorMessages = new List<string> { ex.Message };
+                _response.StatusCode = HttpStatusCode.BadRequest;
             }
-
-            return _response;
+            return Ok(_response);
         }
     }
 }

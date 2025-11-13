@@ -6,7 +6,7 @@ namespace TechShop_API.Models
     {
         public int Id { get; set; }
         public string UserId { get; set; }
-        public ICollection<CartItem> CartItems { get; set; }
+        public ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
 
         [NotMapped]
         public decimal CartTotal { get; set; }
