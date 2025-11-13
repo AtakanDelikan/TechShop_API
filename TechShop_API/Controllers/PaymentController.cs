@@ -1,10 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Stripe;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using TechShop_API.Data;
 using TechShop_API.Models;
+using TechShop_API.Services.Interfaces;
 
 namespace TechShop_API.Controllers
 {
@@ -12,55 +9,36 @@ namespace TechShop_API.Controllers
     [ApiController]
     public class PaymentController : ControllerBase
     {
-        protected ApiResponse _response;
-        private readonly IConfiguration _configuration;
-        private readonly ApplicationDbContext _db;
-        public PaymentController(IConfiguration configuration, ApplicationDbContext db)
+        private readonly IPaymentService _paymentService;
+
+        public PaymentController(IPaymentService paymentService)
         {
-            _configuration = configuration;
-            _db = db;
-            _response = new();
+            _paymentService = paymentService;
         }
 
         [HttpPost]
         public async Task<ActionResult<ApiResponse>> MakePayment(string userId)
         {
-            ShoppingCart shoppingCart = _db.ShoppingCarts
-                .Include(u => u.CartItems)
-                .ThenInclude(u => u.Product)
-                .FirstOrDefault(u => u.UserId == userId);
-
-            if (shoppingCart == null || shoppingCart.CartItems == null || shoppingCart.CartItems.Count == 0)
+            try
             {
-                _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccess = false;
-                return BadRequest(_response);
+                var response = await _paymentService.MakePaymentAsync(userId);
+
+                if (!response.IsSuccess)
+                    return BadRequest(response);
+
+                return Ok(response);
             }
-
-            #region Create Payment Intent
-
-            StripeConfiguration.ApiKey = _configuration["StripeSettings:SecretKey"];
-            shoppingCart.CartTotal = shoppingCart.CartItems.Sum(u => u.Quantity * u.Product.Price);
-
-            PaymentIntentCreateOptions options = new()
+            catch (Exception ex)
             {
-                Amount = (int)(shoppingCart.CartTotal * 100),
-                Currency = "eur",
-                PaymentMethodTypes = new List<string>
-                  {
-                    "card",
-                  },
-            };
-            PaymentIntentService service = new();
-            PaymentIntent response = service.Create(options);
-            shoppingCart.StripePaymentIntentId = response.Id;
-            shoppingCart.ClientSecret = response.ClientSecret;
+                var errorResponse = new ApiResponse
+                {
+                    IsSuccess = false,
+                    StatusCode = HttpStatusCode.InternalServerError,
+                    ErrorMessages = new List<string> { ex.Message }
+                };
 
-            #endregion
-
-            _response.Result = shoppingCart;
-            _response.StatusCode = HttpStatusCode.OK;
-            return Ok(_response);
+                return StatusCode((int)HttpStatusCode.InternalServerError, errorResponse);
+            }
         }
     }
 }
