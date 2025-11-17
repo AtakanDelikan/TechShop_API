@@ -1,13 +1,9 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Net;
-using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
-using TechShop_API.Services;
+using TechShop_API.Services.Interfaces;
 using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
@@ -16,233 +12,224 @@ namespace TechShop_API.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
-        private ApiResponse _response;
-        private readonly CategoryService _categoryService;
-        public CategoryController(ApplicationDbContext db, CategoryService categoryService)
+        private readonly ICategoryService _categoryService;
+
+        public CategoryController(ICategoryService categoryService)
         {
-            _db = db;
-            _response = new ApiResponse();
             _categoryService = categoryService;
         }
 
+
+        // -----------------------
+        // GET ALL + TREE
+        // -----------------------
         [HttpGet]
         public async Task<IActionResult> GetCategories()
         {
-            _response.Result = await _categoryService.GetCategoriesTreeAsync();
-            _response.StatusCode = System.Net.HttpStatusCode.OK;
-            return Ok(_response);
+            var response = new ApiResponse();
+
+            try
+            {
+                response.Result = await _categoryService.GetCategoriesTreeAsync();
+                response.StatusCode = HttpStatusCode.OK;
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                response.IsSuccess = false;
+                response.ErrorMessages.Add(ex.Message);
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                return StatusCode(500, response);
+            }
         }
 
-        [HttpGet("{id:int}", Name = "GetCategory")]
+
+        // -----------------------
+        // GET BY ID
+        // -----------------------
+        [HttpGet("{id:int}")]
         public async Task<IActionResult> GetCategory(int id)
         {
-            if (id == 0)
+            var response = new ApiResponse();
+
+            if (id <= 0)
             {
-                _response.StatusCode = HttpStatusCode.BadRequest;
-                _response.IsSuccess = false;
-                return BadRequest(_response);
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add("Invalid ID");
+                return BadRequest(response);
             }
-            Category category = _db.Categories
-                .Select(category => new Category
-                {
-                    Id = category.Id,
-                    Name = category.Name,
-                    Description = category.Description,
-                    ParentCategoryId = category.ParentCategoryId,
-                    ParentCategory = new Category { Name = category.ParentCategory.Name }, // Only select the name
-                })
-                .FirstOrDefault(u => u.Id == id);
+
+            var category = await _categoryService.GetCategoryByIdAsync(id);
+
             if (category == null)
             {
-                _response.StatusCode = HttpStatusCode.NotFound;
-                _response.IsSuccess = false;
-                return NotFound(_response);
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.NotFound;
+                return NotFound(response);
             }
-            _response.Result = category;
-            _response.StatusCode = HttpStatusCode.OK;
-            return Ok(_response);
+
+            response.Result = category;
+            response.StatusCode = HttpStatusCode.OK;
+            return Ok(response);
         }
 
+
+        // -----------------------
+        // SEARCH
+        // -----------------------
         [HttpGet("search")]
-        public async Task<ActionResult<ApiResponse>> GetSearchedCategories(string searchTerm, int count = 5)
+        public async Task<IActionResult> SearchCategories(string searchTerm, int count = 5)
         {
-            try
+            var response = new ApiResponse();
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
             {
-                var categories = await _db.Categories
-                    .Where(c => c.Name.Contains(searchTerm) ||
-                                c.Description.Contains(searchTerm))
-                    .OrderBy(c => c.Name)
-                    .Take(count)
-                    .Select(category => new
-                    {
-                        category.Id,
-                        category.Name,
-                        category.Description
-                    })
-                    .ToListAsync();
-                _response.Result = categories;
-                _response.StatusCode = HttpStatusCode.OK;
-                return _response;
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add("searchTerm is required.");
+                return BadRequest(response);
             }
-            catch (Exception ex)
-            {
-                _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
-            }
-            return _response;
+
+            response.Result = await _categoryService.SearchCategoriesAsync(searchTerm, count);
+            response.StatusCode = HttpStatusCode.OK;
+
+            return Ok(response);
         }
 
+
+        // -----------------------
+        // CREATE
+        // -----------------------
         [HttpPost]
         [Authorize(Roles = SD.Role_Admin)]
-        public async Task<ActionResult<ApiResponse>> CreateCategory([FromBody] CategoryCreateDTO categoryCreateDTO)
+        public async Task<IActionResult> CreateCategory([FromBody] CategoryCreateDTO dto)
         {
+            var response = new ApiResponse();
+
+            if (!ModelState.IsValid)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add("Invalid model state");
+                return BadRequest(response);
+            }
+
             try
             {
-                if (ModelState.IsValid)
-                {
-                    var parentCategoryId = categoryCreateDTO.ParentCategoryId;
-                    if (parentCategoryId == 0)
-                    {
-                        parentCategoryId = null;
-                    }
+                var created = await _categoryService.CreateCategoryAsync(dto);
 
-                    if (parentCategoryId != null &&
-                        _db.Categories
-                        .FirstOrDefault(u => u.Id == parentCategoryId) == null)
-                    {
-                        // if a parent Id is given but that parent doesn't exist in the database
-                        throw new ArgumentException("Parent category doesn't exist");
-                    }
+                response.Result = created;
+                response.StatusCode = HttpStatusCode.Created;
 
-                    Category CategoryToCreate = new()
-                    {
-                        Name = categoryCreateDTO.Name,
-                        Description = categoryCreateDTO.Description,
-                        ParentCategoryId = parentCategoryId,
-                    };
-                    _db.Categories.Add(CategoryToCreate);
-                    _db.SaveChanges();
-                    _response.Result = categoryCreateDTO;
-                    _response.StatusCode = HttpStatusCode.Created;
-                    _response.IsSuccess = true;
-                    return _response;
-                }
-                else
-                {
-                    _response.IsSuccess = false;
-                }
+                return StatusCode(201, response);
+            }
+            catch (ArgumentException ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add(ex.Message);
+                return BadRequest(response);
             }
             catch (Exception ex)
             {
-                _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.ErrorMessages.Add(ex.Message);
+                return StatusCode(500, response);
             }
-
-            return _response;
         }
 
+
+        // -----------------------
+        // UPDATE
+        // -----------------------
         [HttpPut("{id:int}")]
         [Authorize(Roles = SD.Role_Admin)]
-        public async Task<ActionResult<ApiResponse>> UpdateCategory(int id, [FromBody] CategoryUpdateDTO CategoryUpdateDTO)
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryUpdateDTO dto)
         {
+            var response = new ApiResponse();
+
+            if (!ModelState.IsValid)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(response);
+            }
+
             try
             {
-                if (ModelState.IsValid)
-                {
-                    if (CategoryUpdateDTO == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.BadRequest;
-                        _response.IsSuccess = false;
-                        return BadRequest();
-                    }
-
-                    Category categoryFromDb = await _db.Categories.FindAsync(id);
-                    if (categoryFromDb == null)
-                    {
-                        _response.StatusCode = HttpStatusCode.BadRequest;
-                        _response.IsSuccess = false;
-                        return BadRequest();
-                    }
-
-
-                    categoryFromDb.Name = CategoryUpdateDTO.Name;
-                    categoryFromDb.Description = CategoryUpdateDTO.Description;
-                    Category parentCategoryFromDb = await _db.Categories.FindAsync(CategoryUpdateDTO.ParentCategoryId);
-                    categoryFromDb.ParentCategoryId = parentCategoryFromDb?.Id;
-
-                    _db.Categories.Update(categoryFromDb);
-                    _db.SaveChanges();
-                    _response.StatusCode = HttpStatusCode.NoContent;
-                    return Ok(_response);
-                }
-                else
-                {
-                    _response.IsSuccess = false;
-                }
+                await _categoryService.UpdateCategoryAsync(id, dto);
+                response.StatusCode = HttpStatusCode.NoContent;
+                return StatusCode(204, response);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.NotFound;
+                response.ErrorMessages.Add(ex.Message);
+                return NotFound(response);
+            }
+            catch (ArgumentException ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add(ex.Message);
+                return BadRequest(response);
             }
             catch (Exception ex)
             {
-                _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.ErrorMessages.Add(ex.Message);
+                return StatusCode(500, response);
             }
-
-            return _response;
         }
 
+
+        // -----------------------
+        // DELETE
+        // -----------------------
         [HttpDelete("{id:int}")]
         [Authorize(Roles = SD.Role_Admin)]
-        public async Task<ActionResult<ApiResponse>> DeleteCategory(int id)
+        public async Task<IActionResult> DeleteCategory(int id)
         {
+            var response = new ApiResponse();
+
+            if (id <= 0)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(response);
+            }
+
             try
             {
-                if (id == 0)
-                {
-                    _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccess = false;
-                    return BadRequest();
-                }
-
-                Category categoryFromDb = await _db.Categories.FindAsync(id);
-                if (categoryFromDb == null)
-                {
-                    _response.StatusCode = HttpStatusCode.BadRequest;
-                    _response.IsSuccess = false;
-                    return BadRequest();
-                }
-                // cannot delete if products exist of this category
-                bool hasProduct = _db.Products.Any(u => u.CategoryId == id);
-                if (hasProduct)
-                {
-                    throw new ArgumentException("Cannot delete category that has products");
-                }
-                // cannot delete if sub-category exist
-                bool hasSubCategory = _db.Categories.Any(u => u.ParentCategoryId == id);
-                if (hasSubCategory)
-                {
-                    throw new ArgumentException("Cannot delete category that has sub-category");
-                }
-
-                var categoryAttributes = _db.CategoryAttributes.Where(ca => ca.CategoryId == id);
-                _db.CategoryAttributes.RemoveRange(categoryAttributes);
-                _db.Categories.Remove(categoryFromDb);
-
-                _db.SaveChanges();
-                _response.StatusCode = HttpStatusCode.NoContent;
-                return Ok(_response);
+                await _categoryService.DeleteCategoryAsync(id);
+                response.StatusCode = HttpStatusCode.NoContent;
+                return StatusCode(204, response);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.NotFound;
+                response.ErrorMessages.Add(ex.Message);
+                return NotFound(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.BadRequest;
+                response.ErrorMessages.Add(ex.Message);
+                return BadRequest(response);
             }
             catch (Exception ex)
             {
-                _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
+                response.IsSuccess = false;
+                response.StatusCode = HttpStatusCode.InternalServerError;
+                response.ErrorMessages.Add(ex.Message);
+                return StatusCode(500, response);
             }
-
-            return _response;
         }
-        
     }
 }
