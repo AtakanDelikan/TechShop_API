@@ -6,7 +6,7 @@ using TechShop_API.Models;
 using TechShop_API.Services.Interfaces;
 using Xunit;
 
-namespace TechShop_API.Tests.Controllers
+namespace TechShop.Tests.Controllers
 {
     public class PaymentControllerTests
     {
