@@ -1,74 +1,63 @@
-﻿using Azure;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Net;
-using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Models.Dto;
+using TechShop_API.Services;
+using TechShop_API.Services.Interfaces;
 using TechShop_API.Utility;
 
-namespace TechShop_API.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class ProductImageController : ControllerBase
 {
-    [Route("api/ProductImage")]
-    [ApiController]
-    public class ProductImageController : ControllerBase
+    private readonly IProductImageService _imageService;
+
+    public ProductImageController(IProductImageService imageService)
     {
-        private readonly ApplicationDbContext _db;
-        private ApiResponse _response;
-        public ProductImageController(ApplicationDbContext db)
+        _imageService = imageService;
+    }
+
+    [HttpPost("upload-multiple")]
+    [Authorize(Roles = SD.Role_Admin)]
+    public async Task<ActionResult<ApiResponse>> UploadMultiple(
+        [FromForm] ProductImagesUploadDTO dto)
+    {
+        var response = new ApiResponse();
+
+        try
         {
-            _db = db;
-            _response = new ApiResponse();
+            var images = await _imageService.UploadImagesAsync(dto.ProductId, dto.Files);
+            response.Result = images;
+            response.StatusCode = HttpStatusCode.Created;
+        }
+        catch (Exception ex)
+        {
+            response.IsSuccess = false;
+            response.StatusCode = HttpStatusCode.BadRequest;
+            response.ErrorMessages.Add(ex.Message);
         }
 
-        [HttpPost]
-        [Authorize(Roles = SD.Role_Admin)]
-        public async Task<ActionResult<ApiResponse>> CreateProduct([FromBody] ProductImagesCreateDTO productImageDTO)
+        return response;
+    }
+
+    [HttpDelete("{imageId:int}")]
+    [Authorize(Roles = SD.Role_Admin)]
+    public async Task<ActionResult<ApiResponse>> Delete(int imageId)
+    {
+        var response = new ApiResponse();
+
+        bool deleted = await _imageService.DeleteImageAsync(imageId);
+
+        if (!deleted)
         {
-            try
-            {
-                if (ModelState.IsValid)
-                {
-                    var productId = productImageDTO.ProductId;
-                    if (_db.Products.FirstOrDefault(u => u.Id == productId) == null)
-                    {
-                        throw new ArgumentException("Product doesn't exist");
-                    }
-
-                    for (int i = 0; i < productImageDTO.Urls.Length; i++)
-                    {
-                        ProductImage productImageToCreate = new ProductImage
-                        {
-                            ProductId = productImageDTO.ProductId,
-                            Url = productImageDTO.Urls[i],
-                            DisplayOrder = i
-                        };
-
-                        _db.ProductImages.Add(productImageToCreate);
-                    }
-                    _db.SaveChanges();
-
-                    _response.StatusCode = HttpStatusCode.Created;
-                    return _response;
-                }
-                else
-                {
-                    _response.IsSuccess = false;
-                }
-            }
-            catch (Exception ex)
-            {
-                _response.IsSuccess = false;
-                _response.ErrorMessages
-                    = new List<string>() { ex.ToString() };
-            }
-
-            return _response;
+            response.IsSuccess = false;
+            response.StatusCode = HttpStatusCode.NotFound;
+            response.ErrorMessages.Add("Image not found.");
+            return response;
         }
 
+        response.StatusCode = HttpStatusCode.OK;
+        return response;
     }
 }
