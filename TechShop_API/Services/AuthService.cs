@@ -44,6 +44,8 @@ namespace TechShop_API.Services
             {
                 Subject = new ClaimsIdentity(new[]
                 {
+                    new Claim("fullName", user.Name),
+                    new Claim("id", user.Id.ToString()),
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email ?? user.UserName),
                     new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? SD.Role_Customer)
