@@ -27,16 +27,8 @@ namespace TechShop_API.Services
             _userManager = userManager;
             _roleManager = roleManager;
         }
-
-        public async Task<LoginResponseDTO> LoginAsync(LoginRequestDTO model)
+        private string CreateToken(ApplicationUser user,IList<string> roles)
         {
-            var user = await _db.ApplicationUsers
-                .FirstOrDefaultAsync(u => u.UserName.ToLower() == model.UserName.ToLower());
-            if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
-                throw new UnauthorizedAccessException("Invalid username or password");
-
-            var roles = await _userManager.GetRolesAsync(user);
-
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
 
@@ -50,17 +42,105 @@ namespace TechShop_API.Services
                     new Claim(ClaimTypes.Email, user.Email ?? user.UserName),
                     new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? SD.Role_Customer)
                 }),
-                Expires = DateTime.UtcNow.AddYears(1),
+                Expires = DateTime.UtcNow.AddMinutes(15),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        private string CreateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey)),
+                ValidateLifetime = false // Don't throw an error if expired
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+
+            if (securityToken is not JwtSecurityToken jwtSecurityToken ||
+                !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+        }
+
+        public async Task<LoginResponseDTO> LoginAsync(LoginRequestDTO model)
+        {
+            var user = await _db.ApplicationUsers
+                .FirstOrDefaultAsync(u => u.UserName.ToLower() == model.UserName.ToLower());
+            if (user == null || !await _userManager.CheckPasswordAsync(user, model.Password))
+                throw new UnauthorizedAccessException("Invalid username or password");
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            var accessToken = CreateToken(user, roles);
+            var refreshToken = CreateRefreshToken();
+
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
 
             return new LoginResponseDTO
             {
                 Email = user.Email,
-                Token = tokenHandler.WriteToken(token)
+                Token = accessToken,
+                RefreshToken = refreshToken
             };
+        }
+
+        public async Task<LoginResponseDTO> RefreshAccessTokenAsync(TokenRequestDTO model)
+        {
+            var principal = GetPrincipalFromExpiredToken(model.AccessToken);
+            var userId = principal.Claims.FirstOrDefault(u => u.Type == "id")?.Value;
+
+            var user = await _db.ApplicationUsers.FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null || user.RefreshToken != model.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                throw new UnauthorizedAccessException("Invalid or expired refresh token");
+
+            // Rotate Tokens
+            var roles = await _userManager.GetRolesAsync(user);
+            var accessToken = CreateToken(user, roles);
+            var newRefreshToken = CreateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            return new LoginResponseDTO
+            {
+                Email = user.Email,
+                Token = accessToken,
+                RefreshToken = newRefreshToken
+            };
+        }
+
+        public async Task<bool> RevokeTokenAsync(string userId)
+        {
+            var user = await _db.ApplicationUsers.FindAsync(userId);
+            if (user == null) return false;
+
+            // Wipe the tokens
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = DateTime.MinValue;
+
+            var result = await _userManager.UpdateAsync(user);
+            return result.Succeeded;
         }
 
         public async Task<bool> RegisterAsync(RegisterRequestDTO model)

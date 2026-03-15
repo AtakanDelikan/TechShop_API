@@ -58,6 +58,46 @@ namespace TechShop_API.Controllers
             }
         }
 
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] TokenRequestDTO model)
+        {
+            try
+            {
+                var result = await _authService.RefreshAccessTokenAsync(model);
+                _response.Result = result;
+                _response.IsSuccess = true;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.ErrorMessages.Add(ex.Message);
+                _response.StatusCode = HttpStatusCode.BadRequest;
+                return BadRequest(_response);
+            }
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            var userId = User.FindFirstValue("id");
+
+            if (string.IsNullOrEmpty(userId)) return BadRequest();
+
+            var result = await _authService.RevokeTokenAsync(userId);
+
+            if (result)
+            {
+                _response.IsSuccess = true;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+
+            return BadRequest();
+        }
+
         [HttpGet("userdata")]
         [Authorize]
         public async Task<ActionResult<ApiResponse>> GetUserData()

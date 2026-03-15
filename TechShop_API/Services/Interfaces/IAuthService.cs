@@ -8,5 +8,7 @@ namespace TechShop_API.Services.Interfaces
         Task<bool> RegisterAsync(RegisterRequestDTO model);
         Task<UserDetailsDTO> GetUserDataAsync(string userId);
         Task<bool> UpdateUserDataAsync(string userId, UserDetailsDTO model);
+        Task<LoginResponseDTO> RefreshAccessTokenAsync(TokenRequestDTO model);
+        Task<bool> RevokeTokenAsync(string userId);
     }
 }

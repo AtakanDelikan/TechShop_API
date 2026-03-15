@@ -67,7 +67,10 @@ namespace TechShop.Tests.Services
         public async Task RegisterAsync_Throws_WhenUsernameExists()
         {
             using var context = CreateDbContext();
-            context.ApplicationUsers.Add(new ApplicationUser { UserName = "john" });
+            context.ApplicationUsers.Add(new ApplicationUser
+            {   UserName = "john",
+                Name = "John Doe"
+            });
             await context.SaveChangesAsync();
 
             var mockUserManager = MockUserManager();
