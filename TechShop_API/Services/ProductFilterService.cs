@@ -101,7 +101,8 @@ namespace TechShop_API.Services
         private IQueryable<ProductAttribute> FilterString(IQueryable<ProductAttribute> q, string[] values)
         {
             if (values.Length == 0) return q;
-            return q.Where(pa => values.Contains(pa.String));
+            var filterList = values.ToList();
+            return q.Where(pa => filterList.Contains(pa.String));
         }
 
         private IQueryable<ProductAttribute> FilterInteger(IQueryable<ProductAttribute> q, string[] values)
