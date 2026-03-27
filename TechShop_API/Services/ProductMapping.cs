@@ -18,6 +18,7 @@ namespace TechShop_API.Services
                 Description = p.Description,
                 Price = p.Price,
                 Stock = p.Stock,
+                Rating = p.Rating,
                 Images = p.ProductImages?.OrderBy(pi => pi.DisplayOrder).Select(pi => pi.Url).ToList() ?? new List<string>()
             };
         }
@@ -53,6 +54,7 @@ namespace TechShop_API.Services
                 Description = p.Description,
                 Price = p.Price,
                 Stock = p.Stock,
+                Rating = p.Rating,
                 Images = p.ProductImages?.OrderBy(pi => pi.DisplayOrder).Select(pi => pi.Url).ToList() ?? new List<string>(),
                 ProductAttributes = attributes?.ToList() ?? new List<ProductAttributeDTO>()
             };

@@ -9,6 +9,7 @@
         public string? Description { get; set; }
         public decimal Price { get; set; }
         public int Stock { get; set; }
+        public double Rating { get; set; }
         public List<string> Images { get; set; } = new List<string>();
         public List<ProductAttributeDTO> ProductAttributes { get; set; } = new List<ProductAttributeDTO>();
     }
