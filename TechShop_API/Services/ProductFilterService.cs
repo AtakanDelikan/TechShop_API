@@ -60,6 +60,22 @@ namespace TechShop_API.Services
                                          productIdsFromAttrs.Contains(p.Id));
             }
 
+            if (filters != null && filters.TryGetValue("sort", out var sortOrder))
+            {
+                query = sortOrder.ToLower() switch
+                {
+                    "price_asc" => query.OrderBy(p => p.Price),
+                    "price_desc" => query.OrderByDescending(p => p.Price),
+                    "newest" => query.OrderByDescending(p => p.Id),
+                    "rating" => query.OrderByDescending(p => p.Rating),
+                    _ => query.OrderBy(p => p.Name) // Default
+                };
+            }
+            else
+            {
+                query = query.OrderBy(p => p.Name);
+            }
+
             return query;
         }
 

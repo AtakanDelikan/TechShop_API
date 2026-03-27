@@ -103,7 +103,6 @@ namespace TechShop_API.Services
             var items = await query
                 .Include(p => p.ProductImages)
                 .Include(p => p.Category)
-                .OrderBy(p => p.Name)
                 .Skip(pageSize * (pageNumber - 1))
                 .Take(pageSize)
                 .ToListAsync();
