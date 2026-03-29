@@ -31,7 +31,7 @@ namespace TechShop_API.Services
             // price range filter - expects "min﹐max"
             if (filters.TryGetValue("price", out var sPrice) && !string.IsNullOrWhiteSpace(sPrice))
             {
-                var parts = sPrice.Split('﹐');
+                var parts = sPrice.Split('~');
                 if (parts.Length == 2
                     && decimal.TryParse(parts[0], NumberStyles.Any, CultureInfo.InvariantCulture, out var min)
                     && decimal.TryParse(parts[1], NumberStyles.Any, CultureInfo.InvariantCulture, out var max)
@@ -92,7 +92,7 @@ namespace TechShop_API.Services
                 if (!int.TryParse(keyPart, out var attributeId)) continue;
 
                 var inner = part.Substring(idx + 1, part.Length - idx - 2); // between [ and ]
-                var values = inner.Split('﹐', StringSplitOptions.RemoveEmptyEntries);
+                var values = inner.Split('~', StringSplitOptions.RemoveEmptyEntries);
 
                 var categoryAttribute = _db.CategoryAttributes.FirstOrDefault(ca => ca.Id == attributeId);
                 if (categoryAttribute == null) continue;

@@ -48,7 +48,7 @@ namespace TechShop_API.Tests.Services
             db.SaveChanges();
 
             var service = new ProductFilterService(db);
-            var filters = new Dictionary<string, string> { { "price", "15﹐25" } };
+            var filters = new Dictionary<string, string> { { "price", "15~25" } };
 
             var result = service.ApplyFilters(db.Products.AsQueryable(), filters).ToList();
 
