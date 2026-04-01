@@ -100,6 +100,17 @@ namespace TechShop_API.Services
 
             var total = await query.CountAsync();
 
+            var categoryFacets = await query
+                .Where(p => p.Category != null)
+                .GroupBy(p => new { p.Category.Id, p.Category.Name })
+                .Select(g => new
+                {
+                    CategoryId = g.Key.Id,
+                    CategoryName = g.Key.Name,
+                    Count = g.Count()
+                })
+                .ToListAsync();
+
             var items = await query
                 .Include(p => p.ProductImages)
                 .Include(p => p.Category)
@@ -114,7 +125,8 @@ namespace TechShop_API.Services
                 Products = dtoList,
                 TotalItems = total,
                 TotalPages = (int)Math.Ceiling((double)total / pageSize),
-                CurrentPage = pageNumber
+                CurrentPage = pageNumber,
+                AvailableCategories = categoryFacets
             };
             response.StatusCode = System.Net.HttpStatusCode.OK;
             return response;
