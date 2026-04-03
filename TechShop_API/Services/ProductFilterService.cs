@@ -50,14 +50,16 @@ namespace TechShop_API.Services
             // search filter (name/description or product attribute string)
             if (filters.TryGetValue("search", out var searchTerm) && !string.IsNullOrWhiteSpace(searchTerm))
             {
-                // attributes string match (only string attribute values considered here)
-                var productIdsFromAttrs = _db.ProductAttributes
-                    .Where(pa => pa.String != null && pa.String.Contains(searchTerm))
-                    .Select(pa => pa.ProductId);
-
-                query = query.Where(p => p.Name.Contains(searchTerm) ||
-                                         p.Description.Contains(searchTerm) ||
-                                         productIdsFromAttrs.Contains(p.Id));
+                // Check if the current database provider is SQL Server
+                if (_db.Database.IsSqlServer())
+                {
+                    query = query.Where(p => EF.Functions.FreeText(p.SearchText, searchTerm));
+                }
+                else
+                {
+                    // Fallback for Tests (InMemory / SQLite)
+                    query = query.Where(p => p.SearchText.Contains(searchTerm.ToLower()));
+                }
             }
 
             if (filters != null && filters.TryGetValue("sort", out var sortOrder))

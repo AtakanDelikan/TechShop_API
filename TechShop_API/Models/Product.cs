@@ -18,8 +18,8 @@ namespace TechShop_API.Models
         public double Rating { get; set; }
         public decimal Price { get; set; }
         public int Stock { get; set; }
+        public string SearchText { get; set; }
         public ICollection<ProductImage> ProductImages { get; set; }
-        [NotMapped]
-        public ICollection<ProductAttributeDTO> ProductAttributes { get; set; }
+        public ICollection<ProductAttribute> ProductAttributes { get; set; }
     }
 }

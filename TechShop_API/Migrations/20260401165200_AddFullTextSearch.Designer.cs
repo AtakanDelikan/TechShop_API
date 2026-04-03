@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TechShop_API.Data;
 
@@ -11,9 +12,11 @@ using TechShop_API.Data;
 namespace TechShop_API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260401165200_AddFullTextSearch")]
+    partial class AddFullTextSearch
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -255,7 +258,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ShoppingCartId");
 
-                    b.ToTable("CartItems", (string)null);
+                    b.ToTable("CartItems");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.Category", b =>
@@ -283,7 +286,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.CategoryAttribute", b =>
@@ -316,7 +319,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("CategoryAttributes", (string)null);
+                    b.ToTable("CategoryAttributes");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.Comment", b =>
@@ -348,7 +351,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Comments", (string)null);
+                    b.ToTable("Comments");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.Laptop", b =>
@@ -395,7 +398,7 @@ namespace TechShop_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Laptops", (string)null);
+                    b.ToTable("Laptops");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.OrderDetail", b =>
@@ -428,7 +431,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("OrderDetails", (string)null);
+                    b.ToTable("OrderDetails");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.OrderHeader", b =>
@@ -473,7 +476,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ApplicationUserId");
 
-                    b.ToTable("OrderHeaders", (string)null);
+                    b.ToTable("OrderHeaders");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.Product", b =>
@@ -509,7 +512,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.ProductAttribute", b =>
@@ -544,7 +547,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductAttributes", (string)null);
+                    b.ToTable("ProductAttributes");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.ProductImage", b =>
@@ -568,7 +571,7 @@ namespace TechShop_API.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductImages", (string)null);
+                    b.ToTable("ProductImages");
                 });
 
             modelBuilder.Entity("TechShop_API.Models.ShoppingCart", b =>
@@ -584,7 +587,7 @@ namespace TechShop_API.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ShoppingCarts", (string)null);
+                    b.ToTable("ShoppingCarts");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

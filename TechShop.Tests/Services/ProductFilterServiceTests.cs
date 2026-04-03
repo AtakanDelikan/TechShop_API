@@ -61,8 +61,8 @@ namespace TechShop_API.Tests.Services
         {
             using var db = GetInMemoryDb();
             db.Products.AddRange(
-                new Product { Id = 1, Name = "Apple", Description = "Fruit" },
-                new Product { Id = 2, Name = "Banana", Description = "Fruit" });
+                new Product { Id = 1, Name = "Apple", Description = "Fruit", SearchText = "apple fruit" },
+                new Product { Id = 2, Name = "Banana", Description = "Fruit", SearchText = "banana fruit" });
             db.SaveChanges();
 
             var service = new ProductFilterService(db);

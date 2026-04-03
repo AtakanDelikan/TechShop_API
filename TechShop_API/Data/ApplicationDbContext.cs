@@ -52,5 +52,36 @@ namespace TechShop_API.Data
 
             base.OnModelCreating(builder);
         }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var modifiedProducts = ChangeTracker.Entries<Product>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Modified)
+                .Select(e => e.Entity);
+
+            foreach (var product in modifiedProducts)
+            {
+                // Combine all searchable text into one giant string.
+                if (product.Category == null && product.CategoryId > 0)
+                {
+                    await this.Entry(product).Reference(p => p.Category).LoadAsync(cancellationToken);
+                }
+
+                if (product.ProductAttributes == null)
+                {
+                    await this.Entry(product).Collection(p => p.ProductAttributes).LoadAsync(cancellationToken);
+                }
+                var attrStrings = product.ProductAttributes != null
+                    ? string.Join(" ", product.ProductAttributes.Where(a => a.String != null).Select(a => a.String))
+                    : "";
+
+                var categoryName = product.Category?.Name ?? "";
+
+                // Create a space-separated search vector  |product name|product description|category name|string attributes|
+                product.SearchText = $"{product.Name} {product.Description} {categoryName} {attrStrings}".ToLower().Trim();
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
+        }
     }
 }
