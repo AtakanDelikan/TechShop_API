@@ -31,13 +31,26 @@ namespace TechShop_API.Services
             if (category == null)
                 return null;
 
+            var attributeDtos = category.CategoryAttributes
+                .Select(ca => new CategoryAttributeDTO
+                {
+                    Id = ca.Id,
+                    CategoryId = ca.CategoryId,
+                    AttributeName = ca.AttributeName,
+                    DataType = ca.DataType,
+                    UniqueValues = ca.UniqueValues,
+                    Min = ca.Min,
+                    Max = ca.Max
+                })
+                .ToList();
+
             decimal maxPrice = await _db.Products
                 .Where(p => p.CategoryId == categoryId)
                 .MaxAsync(p => (decimal?)p.Price) ?? 0;
 
             return new
             {
-                Attributes = category.CategoryAttributes.ToList(),
+                Attributes = attributeDtos,
                 MaxPrice = decimal.ToDouble(maxPrice)
             };
         }
