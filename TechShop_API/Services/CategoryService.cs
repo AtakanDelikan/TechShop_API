@@ -55,25 +55,6 @@ namespace TechShop_API.Services
 
 
         // -----------------------
-        // SEARCH CATEGORIES
-        // -----------------------
-        public async Task<List<CategorySearchDTO>> SearchCategoriesAsync(string searchTerm, int count)
-        {
-            return await _context.Categories
-                .Where(c => c.Name.Contains(searchTerm) || c.Description.Contains(searchTerm))
-                .OrderBy(c => c.Name)
-                .Take(count)
-                .Select(c => new CategorySearchDTO
-                {
-                    Id = c.Id,
-                    Name = c.Name,
-                    Description = c.Description
-                })
-                .ToListAsync();
-        }
-
-
-        // -----------------------
         // CREATE CATEGORY
         // -----------------------
         public async Task<CategoryDetailsDTO> CreateCategoryAsync(CategoryCreateDTO dto)

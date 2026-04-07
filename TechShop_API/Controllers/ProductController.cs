@@ -45,13 +45,6 @@ namespace TechShop_API.Controllers
             return StatusCode((int)resp.StatusCode, resp);
         }
 
-        [HttpGet("search")]
-        public async Task<IActionResult> Search(string searchTerm, int pageNumber = 1, int pageSize = 10)
-        {
-            var resp = await _service.SearchProductsAsync(searchTerm, pageNumber, pageSize);
-            return StatusCode((int)resp.StatusCode, resp);
-        }
-
         [Authorize(Roles = SD.Role_Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] ProductCreateDTO dto)

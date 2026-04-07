@@ -7,7 +7,6 @@ namespace TechShop_API.Services.Interfaces
     {
         Task<List<CategoryDTO>> GetCategoriesTreeAsync();
         Task<CategoryDetailsDTO?> GetCategoryByIdAsync(int id);
-        Task<List<CategorySearchDTO>> SearchCategoriesAsync(string searchTerm, int count);
         Task<CategoryDetailsDTO> CreateCategoryAsync(CategoryCreateDTO dto);
         Task UpdateCategoryAsync(int id, CategoryUpdateDTO dto);
         Task DeleteCategoryAsync(int id);

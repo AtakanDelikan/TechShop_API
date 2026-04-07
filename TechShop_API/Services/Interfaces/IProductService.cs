@@ -9,7 +9,6 @@ namespace TechShop_API.Services.Interfaces
         Task<ApiResponse> GetByIdAsync(int id);
         Task<ApiResponse> GetByCategoryAsync(int categoryId, int pageNumber, int pageSize);
         Task<ApiResponse> FilterProductsAsync(Dictionary<string, string> filters, int pageNumber, int pageSize);
-        Task<ApiResponse> SearchProductsAsync(string searchTerm, int pageNumber, int pageSize);
         Task<ApiResponse> CreateAsync(ProductCreateDTO dto);
         Task<ApiResponse> UpdateAsync(int id, ProductUpdateDTO dto);
         Task<ApiResponse> DeleteAsync(int id);

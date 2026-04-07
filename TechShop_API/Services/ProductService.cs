@@ -132,49 +132,6 @@ namespace TechShop_API.Services
             return response;
         }
 
-        public async Task<ApiResponse> SearchProductsAsync(string searchTerm, int pageNumber, int pageSize)
-        {
-            var response = new ApiResponse();
-            if (string.IsNullOrWhiteSpace(searchTerm))
-            {
-                response.IsSuccess = false;
-                response.StatusCode = System.Net.HttpStatusCode.BadRequest;
-                response.ErrorMessages.Add("searchTerm is required");
-                return response;
-            }
-
-            IQueryable<Product> query = _db.Products;
-
-            var productIdsFromAttrs = _db.ProductAttributes
-                .Where(pa => pa.String != null && pa.String.Contains(searchTerm))
-                .Select(pa => pa.ProductId);
-
-            query = query.Where(p => p.Name.Contains(searchTerm) ||
-                                     p.Description.Contains(searchTerm) ||
-                                     productIdsFromAttrs.Contains(p.Id));
-
-            var total = await query.CountAsync();
-            var items = await query
-                .Include(p => p.ProductImages)
-                .Include(p => p.Category)
-                .OrderBy(p => p.Name)
-                .Skip(pageSize * (pageNumber - 1))
-                .Take(pageSize)
-                .ToListAsync();
-
-            var dtoList = items.Select(ProductMapping.ToListItem).ToList();
-
-            response.Result = new
-            {
-                Products = dtoList,
-                TotalItems = total,
-                TotalPages = (int)Math.Ceiling((double)total / pageSize),
-                CurrentPage = pageNumber
-            };
-            response.StatusCode = System.Net.HttpStatusCode.OK;
-            return response;
-        }
-
         public async Task<ApiResponse> CreateAsync(ProductCreateDTO dto)
         {
             var response = new ApiResponse();

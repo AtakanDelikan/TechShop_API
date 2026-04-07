@@ -82,23 +82,6 @@ namespace TechShop.Tests.Services
         }
 
         [Fact]
-        public async Task SearchCategoriesAsync_ReturnsMatches()
-        {
-            using var ctx = CreateDbContext();
-            ctx.Categories.Add(new Category { Name = "Alpha", Description = "one" });
-            ctx.Categories.Add(new Category { Name = "Beta", Description = "two" });
-            ctx.Categories.Add(new Category { Name = "Alphabet", Description = "three" });
-            await ctx.SaveChangesAsync();
-
-            var svc = new CategoryService(ctx);
-            var results = await svc.SearchCategoriesAsync("Alph", 10);
-
-            Assert.True(results.Count >= 2);
-            Assert.Contains(results, r => r.Name == "Alpha");
-            Assert.Contains(results, r => r.Name == "Alphabet");
-        }
-
-        [Fact]
         public async Task CreateCategoryAsync_Creates_WhenParentNull()
         {
             using var ctx = CreateDbContext();

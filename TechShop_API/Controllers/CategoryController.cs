@@ -76,29 +76,6 @@ namespace TechShop_API.Controllers
 
 
         // -----------------------
-        // SEARCH
-        // -----------------------
-        [HttpGet("search")]
-        public async Task<IActionResult> SearchCategories(string searchTerm, int count = 5)
-        {
-            var response = new ApiResponse();
-
-            if (string.IsNullOrWhiteSpace(searchTerm))
-            {
-                response.IsSuccess = false;
-                response.StatusCode = HttpStatusCode.BadRequest;
-                response.ErrorMessages.Add("searchTerm is required.");
-                return BadRequest(response);
-            }
-
-            response.Result = await _categoryService.SearchCategoriesAsync(searchTerm, count);
-            response.StatusCode = HttpStatusCode.OK;
-
-            return Ok(response);
-        }
-
-
-        // -----------------------
         // CREATE
         // -----------------------
         [HttpPost]

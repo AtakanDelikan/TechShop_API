@@ -76,16 +76,6 @@ namespace TechShop.Tests.Controllers
         }
 
         [Fact]
-        public async Task SearchCategories_ReturnsBadRequest_WhenSearchTermMissing()
-        {
-            var result = await _controller.SearchCategories("", 5);
-            var bad = Assert.IsType<BadRequestObjectResult>(result);
-            var resp = Assert.IsType<ApiResponse>(bad.Value);
-
-            Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
-        }
-
-        [Fact]
         public async Task CreateCategory_ReturnsCreated_WhenSuccess()
         {
             var createDto = new CategoryCreateDTO { Name = "X" };

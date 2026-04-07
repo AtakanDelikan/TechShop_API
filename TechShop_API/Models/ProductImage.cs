@@ -11,7 +11,6 @@ namespace TechShop_API.Models
         [Required]
         public int ProductId { get; set; }
         [ForeignKey("ProductId")]
-        [JsonIgnore]
         public Product Product { get; set; }
         public string Url { get; set; }
         public int DisplayOrder { get; set; }
