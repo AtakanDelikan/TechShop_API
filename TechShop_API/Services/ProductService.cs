@@ -80,7 +80,7 @@ namespace TechShop_API.Services
 
             var dtoList = items.Select(ProductMapping.ToListItem).ToList();
 
-            response.Result = new
+            response.Result = new PagedResultDTO<ProductListItemDTO>
             {
                 Products = dtoList,
                 TotalItems = total,
@@ -103,7 +103,7 @@ namespace TechShop_API.Services
             var categoryFacets = await query
                 .Where(p => p.Category != null)
                 .GroupBy(p => new { p.Category.Id, p.Category.Name })
-                .Select(g => new
+                .Select(g => new CategoryFacetDTO
                 {
                     CategoryId = g.Key.Id,
                     CategoryName = g.Key.Name,
@@ -120,7 +120,7 @@ namespace TechShop_API.Services
 
             var dtoList = items.Select(ProductMapping.ToListItem).ToList();
 
-            response.Result = new
+            response.Result = new PagedResultDTO<ProductListItemDTO>
             {
                 Products = dtoList,
                 TotalItems = total,
