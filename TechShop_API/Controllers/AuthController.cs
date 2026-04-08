@@ -47,6 +47,11 @@ namespace TechShop_API.Controllers
                 var success = await _authService.RegisterAsync(model);
                 _response.StatusCode = success ? HttpStatusCode.OK : HttpStatusCode.BadRequest;
                 _response.IsSuccess = success;
+
+                if (!success)
+                {
+                    return BadRequest(_response);
+                }
                 return Ok(_response);
             }
             catch (InvalidOperationException ex)
