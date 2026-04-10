@@ -64,6 +64,7 @@ builder.Services.AddScoped<IProductAttributeService, ProductAttributeService>();
 builder.Services.AddScoped<IProductAttributeValueConverter, ProductAttributeValueConverter>();
 builder.Services.AddScoped<IProductImageService, ProductImageService>();
 builder.Services.AddScoped<IBlobService, BlobService>();
+builder.Services.AddScoped<IBulkImportService, BulkImportService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
