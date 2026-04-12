@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using TechShop_API.Data;
 using TechShop_API.Models;
+using TechShop_API.Models.Dto;
 using TechShop_API.Services.Interfaces;
 
 namespace TechShop_API.Services
@@ -14,10 +15,10 @@ namespace TechShop_API.Services
             _db = db;
         }
 
-        public async Task<ShoppingCart> GetShoppingCartAsync(string userId)
+        public async Task<ShoppingCartDTO> GetShoppingCartAsync(string userId)
         {
             if (string.IsNullOrEmpty(userId))
-                return new ShoppingCart();
+                return new ShoppingCartDTO();
 
             var shoppingCart = await _db.ShoppingCarts
                 .Include(u => u.CartItems)
@@ -25,12 +26,35 @@ namespace TechShop_API.Services
                 .ThenInclude(p => p.ProductImages)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
-            if (shoppingCart != null && shoppingCart.CartItems != null && shoppingCart.CartItems.Any())
+            if (shoppingCart == null)
             {
-                shoppingCart.CartTotal = shoppingCart.CartItems.Sum(ci => ci.Quantity * ci.Product.Price);
+                return new ShoppingCartDTO();
             }
 
-            return shoppingCart ?? new ShoppingCart();
+            // Mapping to DTO
+            var cartDto = new ShoppingCartDTO
+            {
+                Id = shoppingCart.Id,
+                UserId = shoppingCart.UserId,
+                CartItems = shoppingCart.CartItems.Select(ci => new CartItemDTO
+                {
+                    Id = ci.Id,
+                    Quantity = ci.Quantity,
+                    Product = new ProductDTO
+                    {
+                        Id = ci.Product.Id,
+                        Name = ci.Product.Name,
+                        Price = ci.Product.Price,
+                        ProductImages = ci.Product.ProductImages
+                            .OrderBy(pi => pi.DisplayOrder)
+                            .Select(pi => pi.Url).ToList()
+                    }
+                }).ToList()
+            };
+
+            cartDto.CartTotal = cartDto.CartItems.Sum(ci => ci.Quantity * ci.Product.Price);
+
+            return cartDto;
         }
 
         public async Task AddOrUpdateItemAsync(string userId, int productId, int updateQuantityBy)

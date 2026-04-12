@@ -5,6 +5,7 @@ using System.Net;
 using System.Threading.Tasks;
 using TechShop_API.Controllers;
 using TechShop_API.Models;
+using TechShop_API.Models.Dto;
 using TechShop_API.Services.Interfaces;
 using Xunit;
 
@@ -24,7 +25,7 @@ namespace TechShop.Tests.Controllers
         [Fact]
         public async Task GetShoppingCart_ReturnsOk_WithCart()
         {
-            var mockCart = new ShoppingCart();
+            var mockCart = new ShoppingCartDTO();
             _mockService.Setup(s => s.GetShoppingCartAsync("user1"))
                         .ReturnsAsync(mockCart);
 
