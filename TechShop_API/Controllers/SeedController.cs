@@ -2,12 +2,14 @@
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Diagnostics.CodeAnalysis;
 using TechShop_API.Data;
 using TechShop_API.Models;
 using TechShop_API.Utility;
 
 namespace TechShop_API.Controllers
 {
+    [ExcludeFromCodeCoverage(Justification = "Internal tool for generating mock data for development environments.")]
     [Route("api/[controller]")]
     [ApiController]
     public class SeedController : ControllerBase
